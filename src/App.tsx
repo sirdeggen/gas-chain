@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Typography, Box, Paper, Stack } from '@mui/material';
+import { Container, Typography, Box, Paper, Stack, Drawer } from '@mui/material';
 import WellheadCard from './components/WellheadCard';
 import GatheringCard from './components/GatheringCard';
 import ProcessingCard from './components/ProcessingCard';
@@ -8,6 +8,7 @@ import StorageCard from './components/StorageCard';
 import LNGExportCard from './components/LNGExportCard';
 import ResultBox from './components/ResultBox';
 import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random } from '@bsv/sdk'
+
 export interface DataEntry {
   entryId: string;
   timestamp: string;
@@ -200,59 +201,81 @@ const App: React.FC = () => {
   };
 
   const getSubmissionResult = (step: string) => {
-    const submission = submissions.find(s => s.step === step);
-    if (!submission) return null;
-    return {
-      status: submission.status,
-      txId: submission.txId || 'N/A',
-      timestamp: submission.data.timestamp
-    };
+    const entry = submissions.find((e) => e.step === step);
+    if (entry) {
+      return {
+        status: entry.status,
+        txid: entry.txid,
+        timestamp: entry.data.timestamp
+      };
+    }
+    return null;
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column', py: 15 }}>
+    <Container maxWidth="lg" sx={{ mt: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column', pt: 15, pb: 40 }}>
       <Typography variant="h4" align="center" color="white" gutterBottom sx={{ fontWeight: 'bold' }}>
         Natural Gas Blockchain Demo
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <WellheadCard data={simulateData.wellhead} onSubmit={handleSubmitData} />
-          <ResultBox step="Wellhead" status={getSubmissionResult('Wellhead')?.status} txId={getSubmissionResult('Wellhead')?.txId} timestamp={getSubmissionResult('Wellhead')?.timestamp} />
+          <ResultBox step="Wellhead" status={getSubmissionResult('Wellhead')?.status} txid={getSubmissionResult('Wellhead')?.txid} timestamp={getSubmissionResult('Wellhead')?.timestamp} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <GatheringCard data={simulateData.gathering} onSubmit={handleSubmitData} />
-          <ResultBox step="Gathering" status={getSubmissionResult('Gathering')?.status} txId={getSubmissionResult('Gathering')?.txId} timestamp={getSubmissionResult('Gathering')?.timestamp} />
+          <ResultBox step="Gathering" status={getSubmissionResult('Gathering')?.status} txid={getSubmissionResult('Gathering')?.txid} timestamp={getSubmissionResult('Gathering')?.timestamp} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <ProcessingCard data={simulateData.processing} onSubmit={handleSubmitData} />
-          <ResultBox step="Processing" status={getSubmissionResult('Processing')?.status} txId={getSubmissionResult('Processing')?.txId} timestamp={getSubmissionResult('Processing')?.timestamp} />
+          <ResultBox step="Processing" status={getSubmissionResult('Processing')?.status} txid={getSubmissionResult('Processing')?.txid} timestamp={getSubmissionResult('Processing')?.timestamp} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <TransmissionCard data={simulateData.transmission} onSubmit={handleSubmitData} />
-          <ResultBox step="Transmission" status={getSubmissionResult('Transmission')?.status} txId={getSubmissionResult('Transmission')?.txId} timestamp={getSubmissionResult('Transmission')?.timestamp} />
+          <ResultBox step="Transmission" status={getSubmissionResult('Transmission')?.status} txid={getSubmissionResult('Transmission')?.txid} timestamp={getSubmissionResult('Transmission')?.timestamp} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <StorageCard data={simulateData.storage} onSubmit={handleSubmitData} />
-          <ResultBox step="Storage" status={getSubmissionResult('Storage')?.status} txId={getSubmissionResult('Storage')?.txId} timestamp={getSubmissionResult('Storage')?.timestamp} />
+          <ResultBox step="Storage" status={getSubmissionResult('Storage')?.status} txid={getSubmissionResult('Storage')?.txid} timestamp={getSubmissionResult('Storage')?.timestamp} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <LNGExportCard data={simulateData.lngExport} onSubmit={handleSubmitData} />
-          <ResultBox step="LNG Export" status={getSubmissionResult('LNG Export')?.status} txId={getSubmissionResult('LNG Export')?.txId} timestamp={getSubmissionResult('LNG Export')?.timestamp} />
+          <ResultBox step="LNG Export" status={getSubmissionResult('LNG Export')?.status} txid={getSubmissionResult('LNG Export')?.txid} timestamp={getSubmissionResult('LNG Export')?.timestamp} />
         </Box>
       </Box>
 
       {submissions.length > 0 && (
-        <Paper sx={{ mt: 4, p: 2 }}>
-          <Typography variant="h6">Submission Log</Typography>
-          {submissions.map((entry, idx) => (
-            <Stack sx={{ height: 40, borderBottom: '1px solid #ccc', p: 1 }} direction='row' key={entry.txid} spacing={3} justifyContent="space-between">
-              <Box sx={{ textAlign: 'left' }}>{entry.step}:</Box>
-              <Box sx={{ textAlign: 'right', width: 70, overflow: 'hidden' }}>{entry.data.entryId}</Box>
-              <Box sx={{ textAlign: 'right' }}>txid: {entry.txid}</Box>
-              <Box sx={{ textAlign: 'right' }}>at {entry.data.timestamp}</Box>
-            </Stack>
-          ))}
-        </Paper>
+        <Drawer
+          anchor="bottom"
+          open={true}
+          variant="persistent"
+          sx={{
+            '& .MuiDrawer-paper': {
+              height: 'auto',
+              maxHeight: '30vh',
+              overflowY: 'auto',
+            },
+          }}
+        >
+          <Paper sx={{ p: 2, m: 1, maxHeight: '20vh', overflowY: 'auto' }}>
+            <Typography variant="h6">Submission Log</Typography>
+            {submissions.toSorted((a, b) => new Date(b.data.timestamp).getTime() - new Date(a.data.timestamp).getTime()).map((entry) => (
+              <Stack
+                sx={{ height: 40, borderBottom: '1px solid #ccc', p: 1 }}
+                direction="row"
+                key={entry.txid}
+                spacing={3}
+                justifyContent="space-between"
+                className='log-entry'
+              >
+                <Box sx={{ textAlign: 'left' }}>{entry.step}:</Box>
+                <Box sx={{ textAlign: 'right' }}>{entry.data.entryId}</Box>
+                <Box sx={{ textAlign: 'right' }}>txid: {entry.txid}</Box>
+                <Box sx={{ textAlign: 'right' }}>at {entry.data.timestamp}</Box>
+              </Stack>
+            ))}
+          </Paper>
+        </Drawer>
       )}
     </Container>
   );

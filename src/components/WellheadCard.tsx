@@ -19,7 +19,7 @@ const WellheadCard: React.FC<WellheadCardProps> = ({ data, onSubmit }) => {
         />
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
-            Wellhead Data Entry
+            Wellhead Sensor Data
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Submit data from wellhead measurements including flow rate and composition
