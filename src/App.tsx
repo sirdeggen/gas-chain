@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Typography, Box, Paper } from '@mui/material';
+import { Container, Typography, Box, Paper, Stack } from '@mui/material';
 import WellheadCard from './components/WellheadCard';
 import GatheringCard from './components/GatheringCard';
 import ProcessingCard from './components/ProcessingCard';
@@ -7,7 +7,7 @@ import TransmissionCard from './components/TransmissionCard';
 import StorageCard from './components/StorageCard';
 import LNGExportCard from './components/LNGExportCard';
 import ResultBox from './components/ResultBox';
-
+import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random } from '@bsv/sdk'
 export interface DataEntry {
   entryId: string;
   timestamp: string;
@@ -15,14 +15,80 @@ export interface DataEntry {
 }
 
 const App: React.FC = () => {
-  const [submissions, setSubmissions] = useState<{ step: string; data: DataEntry; status: string; txId?: string }[]>([]);
+  const [submissions, setSubmissions] = useState<{ step: string; data: DataEntry; status: string; txid?: string }[]>([]);
+  const [wellheadQueue, setWellheadQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
+  const [gatheringQueue, setGatheringQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
+  const [processingQueue, setProcessingQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
+  const [transmissionQueue, setTransmissionQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
+  const [storageQueue, setStorageQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
+  const [lngExportQueue, setLngExportQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
+
 
   async function handleSubmitData(step: string, data: DataEntry) {
     try {
+      const entryId = Utils.toBase64(Random(8))
+      data.entryId = entryId
+      data.timestamp = new Date().toISOString()
+      // Add 10% random variability to numeric values in the data
+      for (const key in data) {
+        if (typeof data[key] === 'number') {
+            const variance = data[key] * 0.1; // 10% of the value
+            const randomFactor = Math.random() * 2 - 1; // Random value between -1 and 1
+            data[key] = data[key] + (variance * randomFactor);
+        } else if (typeof data[key] === 'object' && data[key] !== null) {
+            for (const nestedKey in data[key]) {
+                if (typeof data[key][nestedKey] === 'number') {
+                    const nestedVariance = data[key][nestedKey] * 0.1;
+                    const nestedRandomFactor = Math.random() * 2 - 1;
+                    data[key][nestedKey] = data[key][nestedKey] + (nestedVariance * nestedRandomFactor);
+                }
+            }
+        }
+      }
+
       console.log(`Submitting ${step} data...`);
+      const wallet = new WalletClient()
+      const sha = Hash.sha256(JSON.stringify(data))
+      const shasha = Hash.sha256(sha)
+      const pushdrop = new PushDrop(wallet)
+      const customInstructions = {
+        protocolID: [0, 'natural gas data integrity'] as WalletProtocol,
+        keyID: Utils.toBase64(sha)
+      }
+      const lockingScript = await pushdrop.lock([Utils.toArray(step, 'utf8'), shasha], customInstructions.protocolID, customInstructions.keyID, 'self', true, true, 'after')
+      const res = await wallet.createAction({
+        description: 'record data within an NFT for natural gas supply chain tracking',
+        outputs: [{
+          lockingScript: lockingScript.toHex(),
+          satoshis: 1,
+          outputDescription: 'natural gas supply chain token',
+          customInstructions: JSON.stringify(customInstructions),
+          basket: 'natural gas'
+        }]
+      })
+      console.log({ res })
       await submitDataToBackEndAndSaveAHashToBlockchain(data);
-      const txId = `TX-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
-      setSubmissions((prev) => [...prev, { step, data, status: 'Submitted', txId }]);
+      setSubmissions((prev) => [...prev, { step, data, status: 'Submitted', txid: res.txid }]);
+      switch (step) {
+        case 'Wellhead':
+          setWellheadQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          break;
+        case 'Gathering':
+          setGatheringQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          break;
+        case 'Processing':
+          setProcessingQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          break;
+        case 'Transmission':
+          setTransmissionQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          break;
+        case 'Storage':
+          setStorageQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          break;
+        case 'LNG Export':
+          setLngExportQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          break;
+      }
     } catch (error) {
       console.error('Error submitting data:', error);
       setSubmissions((prev) => [...prev, { step, data, status: 'Error' }]);
@@ -144,8 +210,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" align="center" gutterBottom>
+    <Container maxWidth="lg" sx={{ mt: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column', py: 15 }}>
+      <Typography variant="h4" align="center" color="white" gutterBottom sx={{ fontWeight: 'bold' }}>
         Natural Gas Blockchain Demo
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -179,9 +245,12 @@ const App: React.FC = () => {
         <Paper sx={{ mt: 4, p: 2 }}>
           <Typography variant="h6">Submission Log</Typography>
           {submissions.map((entry, idx) => (
-            <Typography key={idx}>
-              {entry.step}: {entry.status} {entry.txId ? `- TX ID: ${entry.txId}` : ''} at {entry.data.timestamp}
-            </Typography>
+            <Stack sx={{ height: 40, borderBottom: '1px solid #ccc', p: 1 }} direction='row' key={entry.txid} spacing={3} justifyContent="space-between">
+              <Box sx={{ textAlign: 'left' }}>{entry.step}:</Box>
+              <Box sx={{ textAlign: 'right', width: 70, overflow: 'hidden' }}>{entry.data.entryId}</Box>
+              <Box sx={{ textAlign: 'right' }}>txid: {entry.txid}</Box>
+              <Box sx={{ textAlign: 'right' }}>at {entry.data.timestamp}</Box>
+            </Stack>
           ))}
         </Paper>
       )}
