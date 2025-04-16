@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Typography, Grid, Paper, Box } from '@mui/material';
+import { Container, Typography, Box, Paper } from '@mui/material';
 import WellheadCard from './components/WellheadCard';
 import GatheringCard from './components/GatheringCard';
 import ProcessingCard from './components/ProcessingCard';
@@ -148,44 +148,32 @@ const App: React.FC = () => {
       <Typography variant="h4" align="center" gutterBottom>
         Natural Gas Blockchain Demo
       </Typography>
-      <Grid container spacing={3} direction="column">
-        <Grid xs={12}>
-          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
-            <WellheadCard data={simulateData.wellhead} onSubmit={handleSubmitData} />
-            <ResultBox step="Wellhead" status={getSubmissionResult('Wellhead')?.status} txId={getSubmissionResult('Wellhead')?.txId} timestamp={getSubmissionResult('Wellhead')?.timestamp} />
-          </Box>
-        </Grid>
-        <Grid xs={12}>
-          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
-            <GatheringCard data={simulateData.gathering} onSubmit={handleSubmitData} />
-            <ResultBox step="Gathering" status={getSubmissionResult('Gathering')?.status} txId={getSubmissionResult('Gathering')?.txId} timestamp={getSubmissionResult('Gathering')?.timestamp} />
-          </Box>
-        </Grid>
-        <Grid xs={12}>
-          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
-            <ProcessingCard data={simulateData.processing} onSubmit={handleSubmitData} />
-            <ResultBox step="Processing" status={getSubmissionResult('Processing')?.status} txId={getSubmissionResult('Processing')?.txId} timestamp={getSubmissionResult('Processing')?.timestamp} />
-          </Box>
-        </Grid>
-        <Grid xs={12}>
-          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
-            <TransmissionCard data={simulateData.transmission} onSubmit={handleSubmitData} />
-            <ResultBox step="Transmission" status={getSubmissionResult('Transmission')?.status} txId={getSubmissionResult('Transmission')?.txId} timestamp={getSubmissionResult('Transmission')?.timestamp} />
-          </Box>
-        </Grid>
-        <Grid xs={12}>
-          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
-            <StorageCard data={simulateData.storage} onSubmit={handleSubmitData} />
-            <ResultBox step="Storage" status={getSubmissionResult('Storage')?.status} txId={getSubmissionResult('Storage')?.txId} timestamp={getSubmissionResult('Storage')?.timestamp} />
-          </Box>
-        </Grid>
-        <Grid xs={12}>
-          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
-            <LNGExportCard data={simulateData.lngExport} onSubmit={handleSubmitData} />
-            <ResultBox step="LNG Export" status={getSubmissionResult('LNG Export')?.status} txId={getSubmissionResult('LNG Export')?.txId} timestamp={getSubmissionResult('LNG Export')?.timestamp} />
-          </Box>
-        </Grid>
-      </Grid>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+          <WellheadCard data={simulateData.wellhead} onSubmit={handleSubmitData} />
+          <ResultBox step="Wellhead" status={getSubmissionResult('Wellhead')?.status} txId={getSubmissionResult('Wellhead')?.txId} timestamp={getSubmissionResult('Wellhead')?.timestamp} />
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+          <GatheringCard data={simulateData.gathering} onSubmit={handleSubmitData} />
+          <ResultBox step="Gathering" status={getSubmissionResult('Gathering')?.status} txId={getSubmissionResult('Gathering')?.txId} timestamp={getSubmissionResult('Gathering')?.timestamp} />
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+          <ProcessingCard data={simulateData.processing} onSubmit={handleSubmitData} />
+          <ResultBox step="Processing" status={getSubmissionResult('Processing')?.status} txId={getSubmissionResult('Processing')?.txId} timestamp={getSubmissionResult('Processing')?.timestamp} />
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+          <TransmissionCard data={simulateData.transmission} onSubmit={handleSubmitData} />
+          <ResultBox step="Transmission" status={getSubmissionResult('Transmission')?.status} txId={getSubmissionResult('Transmission')?.txId} timestamp={getSubmissionResult('Transmission')?.timestamp} />
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+          <StorageCard data={simulateData.storage} onSubmit={handleSubmitData} />
+          <ResultBox step="Storage" status={getSubmissionResult('Storage')?.status} txId={getSubmissionResult('Storage')?.txId} timestamp={getSubmissionResult('Storage')?.timestamp} />
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+          <LNGExportCard data={simulateData.lngExport} onSubmit={handleSubmitData} />
+          <ResultBox step="LNG Export" status={getSubmissionResult('LNG Export')?.status} txId={getSubmissionResult('LNG Export')?.txId} timestamp={getSubmissionResult('LNG Export')?.timestamp} />
+        </Box>
+      </Box>
 
       {submissions.length > 0 && (
         <Paper sx={{ mt: 4, p: 2 }}>
