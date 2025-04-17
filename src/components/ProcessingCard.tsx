@@ -9,7 +9,7 @@ interface ProcessingCardProps {
 
 const ProcessingCard: React.FC<ProcessingCardProps> = ({ data, onSubmit }) => {
   return (
-    <Card sx={{ width: '60%', height: 300 }}>
+    <Card sx={{ width: '40%', height: 300, borderRadius: 4 }}>
       <CardActionArea onClick={() => onSubmit('Processing', data)}>
         <CardMedia
           component="img"
@@ -18,10 +18,10 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ data, onSubmit }) => {
           alt="Processing Plant"
         />
         <CardContent>
-          <Typography gutterBottom variant="h5" component="div">
-            Processing Plant Data
+          <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: 18 }}>
+            Processing Plant
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ fontSize: 14 }}>
             Submit data from processing facilities about input/output volumes
           </Typography>
         </CardContent>

@@ -9,7 +9,7 @@ interface WellheadCardProps {
 
 const WellheadCard: React.FC<WellheadCardProps> = ({ data, onSubmit }) => {
   return (
-    <Card sx={{ width: '60%', height: 300 }}>
+    <Card sx={{ width: '40%', height: 300, borderRadius: 4 }}>
       <CardActionArea onClick={() => onSubmit('Wellhead', data)}>
         <CardMedia
           component="img"
@@ -18,10 +18,10 @@ const WellheadCard: React.FC<WellheadCardProps> = ({ data, onSubmit }) => {
           alt="Wellhead"
         />
         <CardContent>
-          <Typography gutterBottom variant="h5" component="div">
-            Wellhead Sensor Data
+          <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: 18 }}>
+            Wellhead
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ fontSize: 14 }}>
             Submit data from wellhead measurements including flow rate and composition
           </Typography>
         </CardContent>

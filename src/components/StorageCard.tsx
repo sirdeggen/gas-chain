@@ -9,7 +9,7 @@ interface StorageCardProps {
 
 const StorageCard: React.FC<StorageCardProps> = ({ data, onSubmit }) => {
   return (
-    <Card sx={{ width: '60%', height: 300 }}>
+    <Card sx={{ width: '40%', height: 300, borderRadius: 4 }}>
       <CardActionArea onClick={() => onSubmit('Storage', data)}>
         <CardMedia
           component="img"
@@ -18,10 +18,10 @@ const StorageCard: React.FC<StorageCardProps> = ({ data, onSubmit }) => {
           alt="Storage Facility"
         />
         <CardContent>
-          <Typography gutterBottom variant="h5" component="div">
-            Storage Facility Data
+          <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: 18 }}>
+            Storage Facility
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ fontSize: 14 }}>
             Submit storage facility status and inventory levels
           </Typography>
         </CardContent>

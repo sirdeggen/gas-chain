@@ -7,7 +7,7 @@ import TransmissionCard from './components/TransmissionCard';
 import StorageCard from './components/StorageCard';
 import LNGExportCard from './components/LNGExportCard';
 import ResultBox from './components/ResultBox';
-import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random } from '@bsv/sdk'
+import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC } from '@bsv/sdk'
 
 export interface DataEntry {
   entryId: string;
@@ -16,13 +16,13 @@ export interface DataEntry {
 }
 
 const App: React.FC = () => {
-  const [submissions, setSubmissions] = useState<{ step: string; data: DataEntry; status: string; txid?: string }[]>([]);
-  const [wellheadQueue, setWellheadQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
-  const [gatheringQueue, setGatheringQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
-  const [processingQueue, setProcessingQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
-  const [transmissionQueue, setTransmissionQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
-  const [storageQueue, setStorageQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
-  const [lngExportQueue, setLngExportQueue] = useState<{ data: DataEntry; timestamp: string }[]>([]);
+  const [submissions, setSubmissions] = useState<{ step: string; data: DataEntry; txid: string, arc: any }[]>([]);
+  const [wellheadQueue, setWellheadQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
+  const [gatheringQueue, setGatheringQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
+  const [processingQueue, setProcessingQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
+  const [transmissionQueue, setTransmissionQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
+  const [storageQueue, setStorageQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
+  const [lngExportQueue, setLngExportQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
 
 
   async function handleSubmitData(step: string, data: DataEntry) {
@@ -67,32 +67,38 @@ const App: React.FC = () => {
           basket: 'natural gas'
         }]
       })
-      console.log({ res })
+      const tx = Transaction.fromAtomicBEEF(res.tx as number[])
+      const arc = await tx.broadcast(new ARC('https://arc.taal.com', {
+        headers: {
+          'X-WaitFor': 'SEEN_ON_NETWORK'
+        }
+      }))
+      console.log({ arc })
+      const txid = res.txid ?? ''
       await submitDataToBackEndAndSaveAHashToBlockchain(data);
-      setSubmissions((prev) => [...prev, { step, data, status: 'Submitted', txid: res.txid }]);
+      setSubmissions((prev) => [...prev, { step, data, txid, arc }]);
       switch (step) {
         case 'Wellhead':
-          setWellheadQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          setWellheadQueue((prev) => [...prev, { data, txid }]);
           break;
         case 'Gathering':
-          setGatheringQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          setGatheringQueue((prev) => [...prev, { data, txid }]);
           break;
         case 'Processing':
-          setProcessingQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          setProcessingQueue((prev) => [...prev, { data, txid }]);
           break;
         case 'Transmission':
-          setTransmissionQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          setTransmissionQueue((prev) => [...prev, { data, txid }]);
           break;
         case 'Storage':
-          setStorageQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          setStorageQueue((prev) => [...prev, { data, txid }]);
           break;
         case 'LNG Export':
-          setLngExportQueue((prev) => [...prev, { data, timestamp: new Date().toISOString(), txid: res.txid }]);
+          setLngExportQueue((prev) => [...prev, { data, txid }]);
           break;
       }
     } catch (error) {
       console.error('Error submitting data:', error);
-      setSubmissions((prev) => [...prev, { step, data, status: 'Error' }]);
     }
   }
 
@@ -200,47 +206,35 @@ const App: React.FC = () => {
     }
   };
 
-  const getSubmissionResult = (step: string) => {
-    const entry = submissions.find((e) => e.step === step);
-    if (entry) {
-      return {
-        status: entry.status,
-        txid: entry.txid,
-        timestamp: entry.data.timestamp
-      };
-    }
-    return null;
-  };
-
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column', pt: 15, pb: 40 }}>
-      <Typography variant="h4" align="center" color="white" gutterBottom sx={{ fontWeight: 'bold' }}>
+    <Container maxWidth="lg" sx={{ mt: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column', pt: 10, pb: 40 }}>
+      <Typography variant="h4" align="center" color="white" gutterBottom sx={{ py: 5,fontWeight: 'bold', textShadow: '2px 1px 2px black' }}>
         Natural Gas Blockchain Demo
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <WellheadCard data={simulateData.wellhead} onSubmit={handleSubmitData} />
-          <ResultBox step="Wellhead" status={getSubmissionResult('Wellhead')?.status} txid={getSubmissionResult('Wellhead')?.txid} timestamp={getSubmissionResult('Wellhead')?.timestamp} />
+          <ResultBox data={wellheadQueue[wellheadQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <GatheringCard data={simulateData.gathering} onSubmit={handleSubmitData} />
-          <ResultBox step="Gathering" status={getSubmissionResult('Gathering')?.status} txid={getSubmissionResult('Gathering')?.txid} timestamp={getSubmissionResult('Gathering')?.timestamp} />
+          <ResultBox data={gatheringQueue[gatheringQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <ProcessingCard data={simulateData.processing} onSubmit={handleSubmitData} />
-          <ResultBox step="Processing" status={getSubmissionResult('Processing')?.status} txid={getSubmissionResult('Processing')?.txid} timestamp={getSubmissionResult('Processing')?.timestamp} />
+          <ResultBox data={processingQueue[processingQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <TransmissionCard data={simulateData.transmission} onSubmit={handleSubmitData} />
-          <ResultBox step="Transmission" status={getSubmissionResult('Transmission')?.status} txid={getSubmissionResult('Transmission')?.txid} timestamp={getSubmissionResult('Transmission')?.timestamp} />
+          <ResultBox data={transmissionQueue[transmissionQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <StorageCard data={simulateData.storage} onSubmit={handleSubmitData} />
-          <ResultBox step="Storage" status={getSubmissionResult('Storage')?.status} txid={getSubmissionResult('Storage')?.txid} timestamp={getSubmissionResult('Storage')?.timestamp} />
+          <ResultBox data={storageQueue[storageQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <LNGExportCard data={simulateData.lngExport} onSubmit={handleSubmitData} />
-          <ResultBox step="LNG Export" status={getSubmissionResult('LNG Export')?.status} txid={getSubmissionResult('LNG Export')?.txid} timestamp={getSubmissionResult('LNG Export')?.timestamp} />
+          <ResultBox data={lngExportQueue[lngExportQueue.length - 1]} />
         </Box>
       </Box>
 
@@ -269,9 +263,8 @@ const App: React.FC = () => {
                 className='log-entry'
               >
                 <Box sx={{ textAlign: 'left' }}>{entry.step}:</Box>
-                <Box sx={{ textAlign: 'right' }}>{entry.data.entryId}</Box>
                 <Box sx={{ textAlign: 'right' }}>txid: {entry.txid}</Box>
-                <Box sx={{ textAlign: 'right' }}>at {entry.data.timestamp}</Box>
+                <Box sx={{ textAlign: 'right' }}>{new Date(entry.data.timestamp).toLocaleString()}</Box>
               </Stack>
             ))}
           </Paper>
