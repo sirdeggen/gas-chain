@@ -1,28 +1,28 @@
 import React from 'react';
 import { Card, CardActionArea, CardContent, CardMedia, Typography } from '@mui/material';
-import { DataEntry } from '../App';
+import { DataEntry } from '../../App';
 
-interface StorageCardProps {
+interface TransmissionCardProps {
   data: DataEntry;
   onSubmit: (step: string, data: DataEntry) => void;
 }
 
-const StorageCard: React.FC<StorageCardProps> = ({ data, onSubmit }) => {
+const TransmissionCard: React.FC<TransmissionCardProps> = ({ data, onSubmit }) => {
   return (
     <Card sx={{ width: '40%', height: 300, borderRadius: 4 }}>
-      <CardActionArea onClick={() => onSubmit('Storage', data)}>
+      <CardActionArea onClick={() => onSubmit('Transmission', data)}>
         <CardMedia
           component="img"
           height="200"
-          image="/images/storage-facility.png"
-          alt="Storage Facility"
+          image="/images/transmission-pipeline.png"
+          alt="Transmission Pipeline"
         />
         <CardContent>
           <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: 18 }}>
-            Storage Facility
+            Transmission Pipeline
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: 14 }}>
-            Submit storage facility status and inventory levels
+            Submit transmission pipeline measurements and flow data
           </Typography>
         </CardContent>
       </CardActionArea>
@@ -30,4 +30,4 @@ const StorageCard: React.FC<StorageCardProps> = ({ data, onSubmit }) => {
   );
 };
 
-export default StorageCard;
+export default TransmissionCard;

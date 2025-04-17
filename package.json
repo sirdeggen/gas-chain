@@ -8,10 +8,12 @@
   },
   "dependencies": {
     "@bsv/sdk": "^1.4.19",
+    "@bsv/wallet-toolbox": "^1.2.39",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
+    "@vercel/node": "^5.1.14",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

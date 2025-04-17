@@ -1,28 +1,28 @@
 import React from 'react';
 import { Card, CardActionArea, CardContent, CardMedia, Typography } from '@mui/material';
-import { DataEntry } from '../App';
+import { DataEntry } from '../../App';
 
-interface ProcessingCardProps {
+interface LNGExportCardProps {
   data: DataEntry;
   onSubmit: (step: string, data: DataEntry) => void;
 }
 
-const ProcessingCard: React.FC<ProcessingCardProps> = ({ data, onSubmit }) => {
+const LNGExportCard: React.FC<LNGExportCardProps> = ({ data, onSubmit }) => {
   return (
     <Card sx={{ width: '40%', height: 300, borderRadius: 4 }}>
-      <CardActionArea onClick={() => onSubmit('Processing', data)}>
+      <CardActionArea onClick={() => onSubmit('LNG Export', data)}>
         <CardMedia
           component="img"
           height="200"
-          image="/images/processing-plant.png"
-          alt="Processing Plant"
+          image="/images/LNG-export-data.png"
+          alt="LNG Export"
         />
         <CardContent>
           <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: 18 }}>
-            Processing Plant
+            LNG Export
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: 14 }}>
-            Submit data from processing facilities about input/output volumes
+            Submit LNG export terminal data and shipment details
           </Typography>
         </CardContent>
       </CardActionArea>
@@ -30,4 +30,4 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ data, onSubmit }) => {
   );
 };
 
-export default ProcessingCard;
+export default LNGExportCard;

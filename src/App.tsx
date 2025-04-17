@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Container, Typography, Box, Paper, Stack, Drawer } from '@mui/material';
-import WellheadCard from './components/WellheadCard';
-import GatheringCard from './components/GatheringCard';
-import ProcessingCard from './components/ProcessingCard';
-import TransmissionCard from './components/TransmissionCard';
-import StorageCard from './components/StorageCard';
-import LNGExportCard from './components/LNGExportCard';
+import WellheadCard from './components/stages/WellheadCard';
+import GatheringCard from './components/stages/GatheringCard';
+import ProcessingCard from './components/stages/ProcessingCard';
+import TransmissionCard from './components/stages/TransmissionCard';
+import StorageCard from './components/stages/StorageCard';
+import LNGExportCard from './components/stages/LNGExportCard';
 import ResultBox from './components/ResultBox';
-import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC } from '@bsv/sdk'
+import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, CreateActionInput } from '@bsv/sdk'
 
 export interface DataEntry {
   entryId: string;
@@ -24,30 +24,75 @@ const App: React.FC = () => {
   const [storageQueue, setStorageQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
   const [lngExportQueue, setLngExportQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
 
-
   async function handleSubmitData(step: string, data: DataEntry) {
     try {
       const entryId = Utils.toBase64(Random(8))
       data.entryId = entryId
       data.timestamp = new Date().toISOString()
-      // Add 10% random variability to numeric values in the data
-      for (const key in data) {
-        if (typeof data[key] === 'number') {
-            const variance = data[key] * 0.1; // 10% of the value
-            const randomFactor = Math.random() * 2 - 1; // Random value between -1 and 1
-            data[key] = data[key] + (variance * randomFactor);
-        } else if (typeof data[key] === 'object' && data[key] !== null) {
-            for (const nestedKey in data[key]) {
-                if (typeof data[key][nestedKey] === 'number') {
-                    const nestedVariance = data[key][nestedKey] * 0.1;
-                    const nestedRandomFactor = Math.random() * 2 - 1;
-                    data[key][nestedKey] = data[key][nestedKey] + (nestedVariance * nestedRandomFactor);
-                }
-            }
+      data = simulatedData(data)
+
+      const { txid, arc } = await createTokenOnBSV(data, step)
+
+      setSubmissions((prev) => [...prev, { step, data, txid, arc }])
+      switch (step) {
+        case 'Wellhead':
+          setWellheadQueue((prev) => [...prev, { data, txid }])
+          break
+        case 'Gathering':
+          setGatheringQueue((prev) => [...prev, { data, txid }])
+          break
+        case 'Processing':
+          setProcessingQueue((prev) => [...prev, { data, txid }])
+          break
+        case 'Transmission':
+          setTransmissionQueue((prev) => [...prev, { data, txid }])
+          break
+        case 'Storage':
+          setStorageQueue((prev) => [...prev, { data, txid }])
+          break
+        case 'LNG Export':
+          setLngExportQueue((prev) => [...prev, { data, txid }])
+          break
+      }
+    } catch (error) {
+      console.error('Error submitting data:', error);
+    }
+  }
+
+  /**
+   * Simulates data by adding 10% random variability to numeric values in the example data
+   * @param data The example data to be varied
+   * @returns The simulated data
+   */
+  function simulatedData(data: DataEntry): DataEntry {
+    for (const key in data) {
+      if (typeof data[key] === 'number') {
+        const variance = data[key] * 0.1; // 10% of the value
+        const randomFactor = Math.random() * 2 - 1; // Random value between -1 and 1
+        data[key] = data[key] + (variance * randomFactor);
+      } else if (typeof data[key] === 'object' && data[key] !== null) {
+        for (const nestedKey in data[key]) {
+          if (typeof data[key][nestedKey] === 'number') {
+            const nestedVariance = data[key][nestedKey] * 0.1;
+            const nestedRandomFactor = Math.random() * 2 - 1;
+            data[key][nestedKey] = data[key][nestedKey] + (nestedVariance * nestedRandomFactor);
+          }
         }
       }
+    }
+    return data
+  }
 
-      console.log(`Submitting ${step} data...`);
+  /**
+   * Uses the BSV Blockchain to create a token capturing the data as a hash, timestamping it, 
+   * and assigning ownership to the token which represents the volume of gas.
+   * 
+   * @param data The data to be stored
+   * @param step The step of the process
+   * @returns The transaction ID and broadcast response
+   */
+  async function createTokenOnBSV(data: DataEntry, step: string): Promise<{ txid: string, arc: any }> {
+    console.log(`Submitting ${step} data...`);
       const wallet = new WalletClient()
       const sha = Hash.sha256(JSON.stringify(data))
       const shasha = Hash.sha256(sha)
@@ -57,8 +102,17 @@ const App: React.FC = () => {
         keyID: Utils.toBase64(sha)
       }
       const lockingScript = await pushdrop.lock([Utils.toArray(step, 'utf8'), shasha], customInstructions.protocolID, customInstructions.keyID, 'self', true, true, 'after')
+      const unlockingScript = pushdrop.redeem()
+      const inputs: CreateActionInput[] = [{
+        unlockingScript: pushdrop.unlock(),
+        satoshis: 1,
+        outputDescription: 'natural gas supply chain token',
+        customInstructions: JSON.stringify(customInstructions),
+        basket: 'natural gas'
+      }]
       const res = await wallet.createAction({
         description: 'record data within an NFT for natural gas supply chain tracking',
+        inputs,
         outputs: [{
           lockingScript: lockingScript.toHex(),
           satoshis: 1,
@@ -74,32 +128,7 @@ const App: React.FC = () => {
         }
       }))
       console.log({ arc })
-      const txid = res.txid ?? ''
-      await submitDataToBackEndAndSaveAHashToBlockchain(data);
-      setSubmissions((prev) => [...prev, { step, data, txid, arc }]);
-      switch (step) {
-        case 'Wellhead':
-          setWellheadQueue((prev) => [...prev, { data, txid }]);
-          break;
-        case 'Gathering':
-          setGatheringQueue((prev) => [...prev, { data, txid }]);
-          break;
-        case 'Processing':
-          setProcessingQueue((prev) => [...prev, { data, txid }]);
-          break;
-        case 'Transmission':
-          setTransmissionQueue((prev) => [...prev, { data, txid }]);
-          break;
-        case 'Storage':
-          setStorageQueue((prev) => [...prev, { data, txid }]);
-          break;
-        case 'LNG Export':
-          setLngExportQueue((prev) => [...prev, { data, txid }]);
-          break;
-      }
-    } catch (error) {
-      console.error('Error submitting data:', error);
-    }
+      return { txid: res.txid, arc }
   }
 
   const simulateData = {

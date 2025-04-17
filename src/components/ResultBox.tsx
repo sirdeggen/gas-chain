@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, IconButton, Typography } from '@mui/material';
 import LinkIcon from '@mui/icons-material/Link';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 interface ResultBoxProps {
   data: any
@@ -28,13 +29,18 @@ const ResultBox: React.FC<ResultBoxProps> = ({ data }) => {
 
   if (!data) {
     return <Box sx={{ width: '60%', height: 150, border: '1px dashed #ccc', borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Typography variant="body1" color="textSecondary">No data.</Typography>
+      <Typography variant="body1" color="textSecondary">No tokens yet.</Typography>
     </Box>;
   }
 
   return (
-    <Box onClick={getStatus} sx={{ width: '60%', height: 'auto', border: '1px solid #ccc', borderRadius: 2, p: 2, backgroundColor: data.status === 'Submitted' ? '#e6f3e6' : '#f3e6e6' }}>
+    <Box onClick={getStatus} sx={{ position: 'relative', width: '60%', height: 'auto', border: '1px solid #ccc', borderRadius: 2, p: 2, backgroundColor: data.status === 'Submitted' ? '#e6f3e6' : '#f3e6e6' }}>
       <Typography variant="h6" sx={{ mb: 1 }}>Immutable Record Details:</Typography>
+      <Box sx={{ position: 'absolute', top: 10, right: 10 }}>
+        <IconButton size="large" aria-label="refresh">
+          <RefreshIcon fontSize="small" />
+        </IconButton>
+      </Box>
       {data.step && <Typography variant="body2">Step: {data.step}</Typography>}
       {data.data && (
         <>
