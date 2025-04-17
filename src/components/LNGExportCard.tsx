@@ -14,7 +14,7 @@ const LNGExportCard: React.FC<LNGExportCardProps> = ({ data, onSubmit }) => {
         <CardMedia
           component="img"
           height="200"
-          image="/src/images/LNG-export-data.png"
+          image="/images/LNG-export-data.png"
           alt="LNG Export"
         />
         <CardContent>

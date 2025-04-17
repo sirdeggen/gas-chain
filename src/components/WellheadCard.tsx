@@ -14,7 +14,7 @@ const WellheadCard: React.FC<WellheadCardProps> = ({ data, onSubmit }) => {
         <CardMedia
           component="img"
           height="200"
-          image="/src/images/wellhead.png"
+          image="/images/wellhead.png"
           alt="Wellhead"
         />
         <CardContent>

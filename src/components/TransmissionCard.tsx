@@ -14,7 +14,7 @@ const TransmissionCard: React.FC<TransmissionCardProps> = ({ data, onSubmit }) =
         <CardMedia
           component="img"
           height="200"
-          image="/src/images/transmission-pipeline.png"
+          image="/images/transmission-pipeline.png"
           alt="Transmission Pipeline"
         />
         <CardContent>

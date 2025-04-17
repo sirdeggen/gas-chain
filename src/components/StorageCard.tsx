@@ -14,7 +14,7 @@ const StorageCard: React.FC<StorageCardProps> = ({ data, onSubmit }) => {
         <CardMedia
           component="img"
           height="200"
-          image="/src/images/storage-facility.png"
+          image="/images/storage-facility.png"
           alt="Storage Facility"
         />
         <CardContent>

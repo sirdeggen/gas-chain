@@ -14,7 +14,7 @@ const GatheringCard: React.FC<GatheringCardProps> = ({ data, onSubmit }) => {
         <CardMedia
           component="img"
           height="200"
-          image="/src/images/gathering-pipeline.png"
+          image="/images/gathering-pipeline.png"
           alt="Gathering Pipeline"
         />
         <CardContent>

@@ -14,7 +14,7 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ data, onSubmit }) => {
         <CardMedia
           component="img"
           height="200"
-          image="/src/images/processing-plant.png"
+          image="/images/processing-plant.png"
           alt="Processing Plant"
         />
         <CardContent>
