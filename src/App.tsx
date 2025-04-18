@@ -7,7 +7,7 @@ import TransmissionCard from './components/stages/TransmissionCard';
 import StorageCard from './components/stages/StorageCard';
 import LNGExportCard from './components/stages/LNGExportCard';
 import ResultBox from './components/ResultBox';
-import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, CreateActionInput } from '@bsv/sdk'
+import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, CreateActionInput, WalletWireTransceiver, HTTPWalletWire } from '@bsv/sdk'
 
 export interface DataEntry {
   entryId: string;
@@ -92,43 +92,56 @@ const App: React.FC = () => {
    * @returns The transaction ID and broadcast response
    */
   async function createTokenOnBSV(data: DataEntry, step: string): Promise<{ txid: string, arc: any }> {
-    console.log(`Submitting ${step} data...`);
-      const wallet = new WalletClient()
-      const sha = Hash.sha256(JSON.stringify(data))
-      const shasha = Hash.sha256(sha)
-      const pushdrop = new PushDrop(wallet)
-      const customInstructions = {
+    
+    // Initialize the wallet client with the remote signer to emulate IoT Device signing off on its data.
+    const iotSigner = new WalletWireTransceiver(new HTTPWalletWire('https://natural-chain.vercel.app', 'https://natural-chain.vercel.app/api'))
+
+    // Initialize the wallet client with the remote signer
+    const wallet = new WalletClient(iotSigner)
+
+    // Create a hash of the data
+    const sha = Hash.sha256(JSON.stringify(data))
+    const shasha = Hash.sha256(sha)
+
+    // Create a new pushdrop token
+    const pushdrop = new PushDrop(wallet)
+    const customInstructions = {
         protocolID: [0, 'natural gas data integrity'] as WalletProtocol,
         keyID: Utils.toBase64(sha)
-      }
-      const lockingScript = await pushdrop.lock([Utils.toArray(step, 'utf8'), shasha], customInstructions.protocolID, customInstructions.keyID, 'self', true, true, 'after')
-      const unlockingScript = pushdrop.redeem()
-      const inputs: CreateActionInput[] = [{
-        unlockingScript: pushdrop.unlock(),
+    }
+
+    // Create a locking script for the pushdrop token
+    const lockingScript = await pushdrop.lock([Utils.toArray(step, 'utf8'), shasha], customInstructions.protocolID, customInstructions.keyID, 'self', true, true, 'after')
+    
+    // Spend the current state of the token to create an immutable chain of custody
+    // const unlockingScript = pushdrop.redeem()
+    // const inputs: CreateActionInput[] = [{
+    //   unlockingScript: pushdrop.unlock(),
+    //   satoshis: 1,
+    //   outputDescription: 'natural gas supply chain token',
+    //   customInstructions: JSON.stringify(customInstructions),
+    //   basket: 'natural gas'
+    // }]
+
+    const res = await wallet.createAction({
+      description: 'record data within an NFT for natural gas supply chain tracking',
+      // inputs,
+      outputs: [{
+        lockingScript: lockingScript.toHex(),
         satoshis: 1,
         outputDescription: 'natural gas supply chain token',
         customInstructions: JSON.stringify(customInstructions),
         basket: 'natural gas'
       }]
-      const res = await wallet.createAction({
-        description: 'record data within an NFT for natural gas supply chain tracking',
-        inputs,
-        outputs: [{
-          lockingScript: lockingScript.toHex(),
-          satoshis: 1,
-          outputDescription: 'natural gas supply chain token',
-          customInstructions: JSON.stringify(customInstructions),
-          basket: 'natural gas'
-        }]
-      })
-      const tx = Transaction.fromAtomicBEEF(res.tx as number[])
-      const arc = await tx.broadcast(new ARC('https://arc.taal.com', {
-        headers: {
-          'X-WaitFor': 'SEEN_ON_NETWORK'
-        }
-      }))
-      console.log({ arc })
-      return { txid: res.txid, arc }
+    })
+    const tx = Transaction.fromAtomicBEEF(res.tx as number[])
+    const arc = await tx.broadcast(new ARC('https://arc.taal.com', {
+      headers: {
+        'X-WaitFor': 'SEEN_ON_NETWORK'
+      }
+    }))
+    console.log({ arc })
+    return { txid: res.txid as string, arc }
   }
 
   const simulateData = {
