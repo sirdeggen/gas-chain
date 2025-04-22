@@ -1,18 +1,17 @@
 import { Setup } from '@bsv/wallet-toolbox'
 import { PrivateKey, WalletWireProcessor } from '@bsv/sdk'
 
-const wallet = await Setup.createWalletClientNoEnv({
-  chain: 'main', 
-  rootKeyHex: process.env.WALLET_ROOT_KEY_HEX!,
-  storageUrl: process.env.WALLET_STORAGE_URL!,
-  privilegedKeyGetter: async () => {
-    return PrivateKey.fromHex(process.env.WALLET_PRIVILEGED_KEY_HEX!)
-  }
-})
-
 export async function POST(req: Request) {
   try {
     const data = await req.arrayBuffer()
+    const wallet = await Setup.createWalletClientNoEnv({
+      chain: 'main', 
+      rootKeyHex: process.env.WALLET_ROOT_KEY_HEX!,
+      storageUrl: process.env.WALLET_STORAGE_URL!,
+      privilegedKeyGetter: async () => {
+        return PrivateKey.fromHex(process.env.WALLET_PRIVILEGED_KEY_HEX!)
+      }
+    })
     console.log(await wallet.isAuthenticated({}))
 
     const w = new WalletWireProcessor(wallet)
