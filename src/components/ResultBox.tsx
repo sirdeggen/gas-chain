@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, IconButton, Typography } from '@mui/material';
 import LinkIcon from '@mui/icons-material/Link';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -15,22 +15,10 @@ interface ArcResponse {
 const ResultBox: React.FC<ResultBoxProps> = ({ entry }) => {
   const [arcData, setArcData] = useState<ArcResponse | null>(null)
 
-  function getStatus() {
-    fetch('https://arc.taal.com/v1/tx/' + entry.txid)
-      .then(res => {
-        if (res.ok) {
-          res.json().then(d => {
-            setArcData(d)
-          })
-        }
-      })
+  const getStatus = async () => {
+    const res = await (await fetch('https://arc.taal.com/v1/tx/' + entry.txid)).json()
+    setArcData(res)
   }
-
-  useEffect(() => {
-    if (entry) {
-      getStatus()
-    }
-  }, [entry, getStatus]);
 
   if (!entry) {
     return <Box sx={{ width: '60%', height: 150, border: '1px dashed #ccc', borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
