@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardActionArea, CardContent, CardMedia, Typography } from '@mui/material';
-import { DataEntry } from '../page.tsx';
+import { DataEntry } from '../../app/page';
 
 interface LNGExportCardProps {
   data: DataEntry;

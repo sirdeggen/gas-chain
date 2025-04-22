@@ -1,17 +1,29 @@
-import { Setup } from '@bsv/wallet-toolbox'
-import { PrivateKey, WalletWireProcessor } from '@bsv/sdk'
+import { WalletStorageManager, Services, Wallet, StorageClient } from '@bsv/wallet-toolbox-client'
+import { KeyDeriver, PrivateKey, WalletWireProcessor } from '@bsv/sdk'
+
+const createWallet = async () => {
+  const endpointUrl = process.env.WALLET_STORAGE_URL!
+  const rootKey = PrivateKey.fromHex(process.env.WALLET_ROOT_KEY_HEX!)
+  const keyDeriver = new KeyDeriver(rootKey)
+  const storage = new WalletStorageManager(keyDeriver.identityKey)
+  const chain = 'main'
+  const services = new Services(chain)
+  const wallet = new Wallet({
+    chain,
+    keyDeriver,
+    storage,
+    services,
+  })
+  const client = new StorageClient(wallet, endpointUrl)
+    await storage.addWalletStorageProvider(client)
+    await storage.makeAvailable()
+    return wallet
+}
 
 export async function POST(req: Request) {
   try {
     const data = await req.arrayBuffer()
-    const wallet = await Setup.createWalletClientNoEnv({
-      chain: 'main', 
-      rootKeyHex: process.env.WALLET_ROOT_KEY_HEX!,
-      storageUrl: process.env.WALLET_STORAGE_URL!,
-      privilegedKeyGetter: async () => {
-        return PrivateKey.fromHex(process.env.WALLET_PRIVILEGED_KEY_HEX!)
-      }
-    })
+    const wallet = await createWallet()
     console.log(await wallet.isAuthenticated({}))
 
     const w = new WalletWireProcessor(wallet)

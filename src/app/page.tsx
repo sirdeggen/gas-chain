@@ -13,17 +13,44 @@ import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transactio
 export interface DataEntry {
   entryId: string;
   timestamp: string;
-  [key: string]: any;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+  wellInfo?: {
+    wellId: string;
+    operator: string;
+  };
+  measurements?: {
+    flowRateMcfh: number;
+    pressurePsi: number;
+    temperatureF: number;
+    composition: {
+      methanePct: number;
+      ethanePct: number;
+      propanePct: number;
+      co2Pct: number;
+      nitrogenPct: number;
+    };
+  };
+  signature: string;
+  [key: string]: unknown;
+}
+
+export interface QueueEntry {
+  data: DataEntry;
+  txid: string;
+  step: string;
 }
 
 const App: React.FC = () => {
-  const [submissions, setSubmissions] = useState<{ step: string; data: DataEntry; txid: string, arc: any }[]>([]);
-  const [wellheadQueue, setWellheadQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
-  const [gatheringQueue, setGatheringQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
-  const [processingQueue, setProcessingQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
-  const [transmissionQueue, setTransmissionQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
-  const [storageQueue, setStorageQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
-  const [lngExportQueue, setLngExportQueue] = useState<{ data: DataEntry; txid: string }[]>([]);
+  const [submissions, setSubmissions] = useState<{ step: string; data: DataEntry; txid: string, arc: unknown }[]>([]);
+  const [wellheadQueue, setWellheadQueue] = useState<QueueEntry[]>([]);
+  const [gatheringQueue, setGatheringQueue] = useState<QueueEntry[]>([]);
+  const [processingQueue, setProcessingQueue] = useState<QueueEntry[]>([]);
+  const [transmissionQueue, setTransmissionQueue] = useState<QueueEntry[]>([]);
+  const [storageQueue, setStorageQueue] = useState<QueueEntry[]>([]);
+  const [lngExportQueue, setLngExportQueue] = useState<QueueEntry[]>([]);
 
   async function handleSubmitData(step: string, data: DataEntry) {
     try {
@@ -37,22 +64,22 @@ const App: React.FC = () => {
       setSubmissions((prev) => [...prev, { step, data, txid, arc }])
       switch (step) {
         case 'Wellhead':
-          setWellheadQueue((prev) => [...prev, { data, txid }])
+          setWellheadQueue((prev) => [...prev, { data, txid, step }])
           break
         case 'Gathering':
-          setGatheringQueue((prev) => [...prev, { data, txid }])
+          setGatheringQueue((prev) => [...prev, { data, txid, step }])
           break
         case 'Processing':
-          setProcessingQueue((prev) => [...prev, { data, txid }])
+          setProcessingQueue((prev) => [...prev, { data, txid, step }])
           break
         case 'Transmission':
-          setTransmissionQueue((prev) => [...prev, { data, txid }])
+          setTransmissionQueue((prev) => [...prev, { data, txid, step }])
           break
         case 'Storage':
-          setStorageQueue((prev) => [...prev, { data, txid }])
+          setStorageQueue((prev) => [...prev, { data, txid, step }])
           break
         case 'LNG Export':
-          setLngExportQueue((prev) => [...prev, { data, txid }])
+          setLngExportQueue((prev) => [...prev, { data, txid, step }])
           break
       }
     } catch (error) {
@@ -67,16 +94,19 @@ const App: React.FC = () => {
    */
   function simulatedData(data: DataEntry): DataEntry {
     for (const key in data) {
-      if (typeof data[key] === 'number') {
-        const variance = data[key] * 0.1; // 10% of the value
+      const value = data[key];
+      if (typeof value === 'number') {
+        const variance = value * 0.1; // 10% of the value
         const randomFactor = Math.random() * 2 - 1; // Random value between -1 and 1
-        data[key] = data[key] + (variance * randomFactor);
-      } else if (typeof data[key] === 'object' && data[key] !== null) {
-        for (const nestedKey in data[key]) {
-          if (typeof data[key][nestedKey] === 'number') {
-            const nestedVariance = data[key][nestedKey] * 0.1;
+        data[key] = (value + (variance * randomFactor)) as number;
+      } else if (typeof value === 'object' && value !== null) {
+        const nested = value as Record<string, number>;
+        for (const nestedKey in nested) {
+          const nestedVal = nested[nestedKey];
+          if (typeof nestedVal === 'number') {
+            const nestedVariance = nestedVal * 0.1;
             const nestedRandomFactor = Math.random() * 2 - 1;
-            data[key][nestedKey] = data[key][nestedKey] + (nestedVariance * nestedRandomFactor);
+            nested[nestedKey] = (nestedVal + (nestedVariance * nestedRandomFactor)) as number;
           }
         }
       }
@@ -92,7 +122,7 @@ const App: React.FC = () => {
    * @param step The step of the process
    * @returns The transaction ID and broadcast response
    */
-  async function createTokenOnBSV(data: DataEntry, step: string): Promise<{ txid: string, arc: any }> {
+  async function createTokenOnBSV(data: DataEntry, step: string): Promise<{ txid: string, arc: unknown }> {
     
     // Initialize the wallet client with the remote signer to emulate IoT Device signing off on its data.
     const iotSigner = new WalletWireTransceiver(new HTTPWalletWire('https://natural-chain.vercel.app', 'https://natural-chain.vercel.app/api'))
@@ -161,7 +191,7 @@ const App: React.FC = () => {
           propanePct: 1.8,
           co2Pct: 0.6,
           nitrogenPct: 4.0
-        }
+        },
       },
       signature: 'f4a9b5e1cd7...digitalSignature'
     },
@@ -204,7 +234,11 @@ const App: React.FC = () => {
       entryId: 'tpd-556677889',
       timestamp: new Date().toISOString(),
       pipelineSegment: { segmentId: 'TransP-Section-18B', operator: 'Interstate Transmission Co.' },
-      measurements: { flowRateMcfh: 25500, pressurePsi: 950, temperatureF: 78.4 },
+      measurements: { 
+        flowRateMcfh: 25500, 
+        pressurePsi: 950, 
+        temperatureF: 78.4 
+      },
       composition: {
         methanePct: 92.7,
         ethanePct: 3.6,
@@ -257,27 +291,39 @@ const App: React.FC = () => {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <WellheadCard data={simulateData.wellhead} onSubmit={handleSubmitData} />
-          <ResultBox data={wellheadQueue[wellheadQueue.length - 1]} />
+          <ResultBox entry={wellheadQueue[wellheadQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <GatheringCard data={simulateData.gathering} onSubmit={handleSubmitData} />
-          <ResultBox data={gatheringQueue[gatheringQueue.length - 1]} />
+          <ResultBox entry={gatheringQueue[gatheringQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <ProcessingCard data={simulateData.processing} onSubmit={handleSubmitData} />
-          <ResultBox data={processingQueue[processingQueue.length - 1]} />
+          <ResultBox entry={processingQueue[processingQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
-          <TransmissionCard data={simulateData.transmission} onSubmit={handleSubmitData} />
-          <ResultBox data={transmissionQueue[transmissionQueue.length - 1]} />
+          <TransmissionCard data={{
+            ...simulateData.transmission,
+            measurements: {
+              ...simulateData.transmission.measurements,
+              composition: {
+                methanePct: 90,
+                ethanePct: 5,
+                propanePct: 3,
+                co2Pct: 1,
+                nitrogenPct: 1
+              }
+            }
+          }} onSubmit={handleSubmitData} />
+          <ResultBox entry={transmissionQueue[transmissionQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <StorageCard data={simulateData.storage} onSubmit={handleSubmitData} />
-          <ResultBox data={storageQueue[storageQueue.length - 1]} />
+          <ResultBox entry={storageQueue[storageQueue.length - 1]} />
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
           <LNGExportCard data={simulateData.lngExport} onSubmit={handleSubmitData} />
-          <ResultBox data={lngExportQueue[lngExportQueue.length - 1]} />
+          <ResultBox entry={lngExportQueue[lngExportQueue.length - 1]} />
         </Box>
       </Box>
 
@@ -318,14 +364,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-// Placeholder functions
-async function submitDataToBackEndAndSaveAHashToBlockchain(data: any) {
-  // Simulate async blockchain transaction call
-  return new Promise((resolve) => setTimeout(resolve, 500));
-}
-
-async function retrieveRecordFromDatabaseAndTimestampProofFromBlockchain(id: string) {
-  // Simulate async retrieval and proof verification call
-  return new Promise((resolve) => setTimeout(resolve, 500));
-}
