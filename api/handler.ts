@@ -7,7 +7,7 @@ const wallet = await Setup.createWalletClientNoEnv({
   rootKeyHex: process.env.WALLET_ROOT_KEY_HEX!,
   storageUrl: process.env.WALLET_STORAGE_URL!,
   privilegedKeyGetter: async () => {
-    return PrivateKey.fromHex(process.env.WALLET_PRIVILEGED_KEY_HEX! as string)
+    return PrivateKey.fromHex(process.env.WALLET_PRIVILEGED_KEY_HEX!)
   }
 })
  
@@ -16,6 +16,8 @@ export default async function handler(
   res: VercelResponse,
 ) {
   try {
+    console.log(await wallet.isAuthenticated({}))
+
     const w = new WalletWireProcessor(wallet)
 
     // convert the arrayBuffer to number[]
