@@ -1,5 +1,5 @@
 import { WalletStorageManager, Services, Wallet, StorageClient } from '@bsv/wallet-toolbox-client'
-import { KeyDeriver, PrivateKey, WalletWireProcessor } from '@bsv/sdk'
+import { KeyDeriver, PrivateKey, WalletWireProcessor, calls } from '@bsv/sdk'
 
 const createWallet = async () => {
   console.log({ WALLET_STORAGE_URL: process.env.WALLET_STORAGE_URL, WALLET_ROOT_KEY_HEX: process.env.WALLET_ROOT_KEY_HEX })
@@ -29,15 +29,24 @@ export async function POST(req: Request) {
     const auth = await wallet.isAuthenticated({})
     console.log({ auth })
 
+    // get the path from the request
+    const path = req.url.split('/').pop()
+    console.log({ path })
+    const callCode = calls[path as keyof typeof calls]
+    console.log({ callCode })
+
     const w = new WalletWireProcessor(wallet)
 
     // convert the arrayBuffer to number[]
     const message = Array.from(new Uint8Array(data))
 
-    console.log({ message })
+    // prepend the call code
+    const messageWithCallCode = [callCode, ...message]
+
+    console.log({ messageWithCallCode })
 
     // transmit the message to the wallet
-    const result = await w.transmitToWallet(message)
+    const result = await w.transmitToWallet(messageWithCallCode)
     
     console.log({ result })
 
