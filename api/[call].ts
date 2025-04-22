@@ -1,4 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Setup } from '@bsv/wallet-toolbox'
 import { PrivateKey, WalletWireProcessor } from '@bsv/sdk'
 
@@ -10,27 +9,24 @@ const wallet = await Setup.createWalletClientNoEnv({
     return PrivateKey.fromHex(process.env.WALLET_PRIVILEGED_KEY_HEX!)
   }
 })
- 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-) {
+
+export async function POST(req: Request) {
   try {
+    const data = await req.arrayBuffer()
     console.log(await wallet.isAuthenticated({}))
 
     const w = new WalletWireProcessor(wallet)
 
     // convert the arrayBuffer to number[]
-    const message = Array.from(new Uint8Array(req.body))
+    const message = Array.from(new Uint8Array(data))
 
     // transmit the message to the wallet
     const result = await w.transmitToWallet(message)
 
     // transmit the result as an arrayBuffer back to the client
-    res.setHeader('Content-Type', 'application/octet-stream')
-    res.status(200).send(Buffer.from(result))
+    return new Response(Buffer.from(result), { headers: { 'Content-Type': 'application/octet-stream' } })
   } catch (error) {
     console.error('Error processing wallet wire request:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    return new Response(null, { status: 500 })
   }
 }
