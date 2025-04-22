@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Container, Typography, Box, Paper, Stack, Drawer } from '@mui/material';
-import WellheadCard from './components/stages/WellheadCard';
-import GatheringCard from './components/stages/GatheringCard';
-import ProcessingCard from './components/stages/ProcessingCard';
-import TransmissionCard from './components/stages/TransmissionCard';
-import StorageCard from './components/stages/StorageCard';
-import LNGExportCard from './components/stages/LNGExportCard';
-import ResultBox from './components/ResultBox';
+import WellheadCard from '../../src/components/stages/WellheadCard';
+import GatheringCard from '../../src/components/stages/GatheringCard';
+import ProcessingCard from '../../src/components/stages/ProcessingCard';
+import TransmissionCard from '../../src/components/stages/TransmissionCard';
+import StorageCard from '../../src/components/stages/StorageCard';
+import LNGExportCard from '../../src/components/stages/LNGExportCard';
+import ResultBox from '../../src/components/ResultBox';
 import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, CreateActionInput, WalletWireTransceiver, HTTPWalletWire } from '@bsv/sdk'
 
 export interface DataEntry {

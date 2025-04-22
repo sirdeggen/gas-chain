@@ -1,7 +1,9 @@
 {
-  "name": "here",
-  "version": "0.1.0",
-  "private": true,
+  "name": "natural-chain",
+  "version": "1.0.0",
+  "description": "Natural Chain - BSV Natural Gas Supply Chain",
+  "author": "Natural Chain",
+  "license": "OpenBSV",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -9,17 +11,22 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@bsv/sdk": "^1.4.19",
+    "@bsv/wallet-toolbox": "^1.2.48",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.0.2",
+    "@mui/material": "^7.0.2",
+    "next": "15.3.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.3.1"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
-    "@eslint/eslintrc": "^3"
+    "typescript": "^5"
   }
 }

@@ -1,28 +1,28 @@
 import React from 'react';
 import { Card, CardActionArea, CardContent, CardMedia, Typography } from '@mui/material';
-import { DataEntry } from '../../App';
+import { DataEntry } from '../page.tsx';
 
-interface ProcessingCardProps {
+interface WellheadCardProps {
   data: DataEntry;
   onSubmit: (step: string, data: DataEntry) => void;
 }
 
-const ProcessingCard: React.FC<ProcessingCardProps> = ({ data, onSubmit }) => {
+const WellheadCard: React.FC<WellheadCardProps> = ({ data, onSubmit }) => {
   return (
     <Card sx={{ width: '40%', height: 300, borderRadius: 4 }}>
-      <CardActionArea onClick={() => onSubmit('Processing', data)}>
+      <CardActionArea onClick={() => onSubmit('Wellhead', data)}>
         <CardMedia
           component="img"
           height="200"
-          image="/images/processing-plant.png"
-          alt="Processing Plant"
+          image="/images/wellhead.png"
+          alt="Wellhead"
         />
         <CardContent>
           <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: 18 }}>
-            Processing Plant
+            Wellhead
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: 14 }}>
-            Submit data from processing facilities about input/output volumes
+            Submit data from wellhead measurements including flow rate and composition
           </Typography>
         </CardContent>
       </CardActionArea>
@@ -30,4 +30,4 @@ const ProcessingCard: React.FC<ProcessingCardProps> = ({ data, onSubmit }) => {
   );
 };
 
-export default ProcessingCard;
+export default WellheadCard;
