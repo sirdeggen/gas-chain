@@ -194,6 +194,13 @@ const App: React.FC = () => {
       true,
       'after'
     )
+
+    const tokens = await wallet.listOutputs({
+      basket: 'natural gas',
+      includeCustomInstructions: true,
+      include: 'entire transactions',
+      limit: 1000
+    })
     
     // Spend the current state of the token to create an immutable chain of custody
     // const unlockingScript = pushdrop.redeem()

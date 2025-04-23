@@ -46,6 +46,9 @@ export async function POST(req: Request) {
       case 'createSignature':
         result = await wallet.createSignature(data)
         break
+      case 'listOutputs':
+        result = await wallet.listOutputs(data)
+        break
       default:
         throw new Error('Invalid path')
     }
