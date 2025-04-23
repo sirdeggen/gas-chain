@@ -8,7 +8,7 @@ import TransmissionCard from '../components/stages/TransmissionCard';
 import StorageCard from '../components/stages/StorageCard';
 import LNGExportCard from '../components/stages/LNGExportCard';
 import ResultBox from '../components/ResultBox';
-import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, WalletWireTransceiver, HTTPWalletWire } from '@bsv/sdk'
+import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, WalletWireTransceiver, HTTPWalletJSON } from '@bsv/sdk'
 
 export interface DataEntry {
   entryId: string;
@@ -125,7 +125,7 @@ const App: React.FC = () => {
   async function createTokenOnBSV(data: DataEntry, step: string): Promise<{ txid: string, arc: unknown }> {
     
     // Initialize the wallet client with the remote signer to emulate IoT Device signing off on its data.
-    const iotSigner = new WalletWireTransceiver(new HTTPWalletWire('https://natural-chain.vercel.app', 'https://natural-chain.vercel.app/api'))
+    const iotSigner = new HTTPWalletJSON('https://natural-chain.vercel.app', 'https://natural-chain.vercel.app/api')
 
     // Initialize the wallet client with the remote signer
     const wallet = new WalletClient(iotSigner)
@@ -142,7 +142,15 @@ const App: React.FC = () => {
     }
 
     // Create a locking script for the pushdrop token
-    const lockingScript = await pushdrop.lock([Utils.toArray(step, 'utf8'), shasha], customInstructions.protocolID, customInstructions.keyID, 'self', true, true, 'after')
+    const lockingScript = await pushdrop.lock(
+      [Utils.toArray(step, 'utf8'), shasha],
+      customInstructions.protocolID,
+      customInstructions.keyID,
+      'self',
+      true,
+      true,
+      'after'
+    )
     
     // Spend the current state of the token to create an immutable chain of custody
     // const unlockingScript = pushdrop.redeem()

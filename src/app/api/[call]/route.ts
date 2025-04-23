@@ -55,7 +55,7 @@ const createWallet = async () => {
 
 export async function POST(req: Request) {
   try {
-    const data = await req.arrayBuffer()
+    const data = await req.json()
     console.log({ data })
     const wallet = await createWallet()
     const auth = await wallet.isAuthenticated({})
@@ -64,28 +64,28 @@ export async function POST(req: Request) {
     // get the path from the request
     const path = req.url.split('/').pop()
     console.log({ path })
-    const callCode = calls[path as keyof typeof calls]
-    console.log({ callCode })
 
-    const w = new WalletWireProcessor(wallet)
-
-    // convert the arrayBuffer to number[]
-    const message = Array.from(new Uint8Array(data))
-
-    // prepend the call code
-    const messageWithCallCode = [callCode, ...message]
-
-    console.log({ messageWithCallCode })
+    let result: unknown
 
     // transmit the message to the wallet
-    const result = await w.transmitToWallet(messageWithCallCode)
-    
-    console.log({ result })
+    switch(path) {
+      case 'createAction':
+        result = await wallet.createAction(data)
+        break
+      case 'getPublicKey':
+        result = await wallet.getPublicKey(data)
+        break
+      case 'createSignature':
+        result = await wallet.createSignature(data)
+        break
+      default:
+        throw new Error('Invalid path')
+    }
 
-    // transmit the result as an arrayBuffer back to the client
-    return new Response(Buffer.from(result), { headers: { 'Content-Type': 'application/octet-stream' } })
+    // transmit the result as json
+    return Response.json(result, { status: 200 })
   } catch (error) {
-    console.error('Error processing wallet wire request:', error)
-    return new Response(null, { status: 500 })
+    console.error({ error })
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
