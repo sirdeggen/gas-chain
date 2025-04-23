@@ -3,11 +3,14 @@ body {
   background: linear-gradient(to bottom, #1976d2, #ffffff, #f4ecd8);
   margin: 0;
   padding: 0;
+  font-family: 'Helvetica', sans-serif;
 }
 
 .log-entry {
-  background-color: #f9f9f9;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 3px solid #1976d2;
+  padding: 10px;
+  margin: 0;
+  animation: flashFade 5s ease-out;
 }
 
 .log-entry:nth-child(odd) {
@@ -16,13 +19,6 @@ body {
 
 .log-entry:nth-child(even) {
   background-color: #ffffff;
-}
-
-.log-entry {
-  border-left: 3px solid #1976d2;
-  padding: 10px;
-  margin: 0;
-  animation: flashFade 5s ease-out;
 }
 
 @keyframes flashFade {

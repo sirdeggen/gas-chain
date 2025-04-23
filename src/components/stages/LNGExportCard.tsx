@@ -9,13 +9,13 @@ interface LNGExportCardProps {
 
 const LNGExportCard: React.FC<LNGExportCardProps> = ({ data, onSubmit }) => {
   return (
-    <Card sx={{ width: '40%', height: 300, borderRadius: 4 }}>
+    <Card sx={{ width: '100%', height: 'auto', borderRadius: 4 }}>
       <CardActionArea onClick={() => onSubmit('LNG Export', data)}>
         <CardMedia
           component="img"
-          height="200"
           image="/images/LNG-export-data.png"
           alt="LNG Export"
+          sx={{ width: '100%', height: 'auto', aspectRatio: '1.67' }}
         />
         <CardContent>
           <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: 18 }}>

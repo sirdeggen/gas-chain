@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from 'react';
-import { Container, Typography, Box, Paper, Stack, Drawer } from '@mui/material';
+import { Container, Typography, Box } from '@mui/material';
 import WellheadCard from '../components/stages/WellheadCard';
 import GatheringCard from '../components/stages/GatheringCard';
 import ProcessingCard from '../components/stages/ProcessingCard';
@@ -9,6 +9,7 @@ import StorageCard from '../components/stages/StorageCard';
 import LNGExportCard from '../components/stages/LNGExportCard';
 import ResultBox from '../components/ResultBox';
 import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, HTTPWalletJSON } from '@bsv/sdk'
+import SubmissionsLog from '@/components/SubmissionsLog';
 
 export interface DataEntry {
   entryId: string;
@@ -43,8 +44,15 @@ export interface QueueEntry {
   step: string;
 }
 
+export interface Submission {
+  data: DataEntry;
+  txid: string;
+  step: string;
+  arc: unknown;
+}
+
 const App: React.FC = () => {
-  const [submissions, setSubmissions] = useState<{ step: string; data: DataEntry; txid: string, arc: unknown }[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [wellheadQueue, setWellheadQueue] = useState<QueueEntry[]>([]);
   const [gatheringQueue, setGatheringQueue] = useState<QueueEntry[]>([]);
   const [processingQueue, setProcessingQueue] = useState<QueueEntry[]>([]);
@@ -291,25 +299,35 @@ const App: React.FC = () => {
     }
   };
 
+  const sx = {
+    display: 'flex',
+    gap: 2,
+    alignItems: 'center',
+    xs: { flexDirection: 'column', width: '100%' },
+    sm: { flexDirection: 'column', width: '100%' },
+    md: { width: '60%' },
+    lg: { width: '40%' }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column', pt: 10, pb: 40 }}>
       <Typography variant="h4" align="center" color="white" gutterBottom sx={{ py: 5,fontWeight: 'bold', textShadow: '2px 1px 2px black' }}>
         Natural Gas Blockchain Demo
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+        <Box sx={sx}>
           <WellheadCard data={simulateData.wellhead} onSubmit={handleSubmitData} />
           <ResultBox entry={wellheadQueue[wellheadQueue.length - 1]} />
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+        <Box sx={sx}>
           <GatheringCard data={simulateData.gathering} onSubmit={handleSubmitData} />
           <ResultBox entry={gatheringQueue[gatheringQueue.length - 1]} />
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+        <Box sx={sx}>
           <ProcessingCard data={simulateData.processing} onSubmit={handleSubmitData} />
           <ResultBox entry={processingQueue[processingQueue.length - 1]} />
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+        <Box sx={sx}>
           <TransmissionCard data={{
             ...simulateData.transmission,
             measurements: {
@@ -325,48 +343,16 @@ const App: React.FC = () => {
           }} onSubmit={handleSubmitData} />
           <ResultBox entry={transmissionQueue[transmissionQueue.length - 1]} />
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+        <Box sx={sx}>
           <StorageCard data={simulateData.storage} onSubmit={handleSubmitData} />
           <ResultBox entry={storageQueue[storageQueue.length - 1]} />
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+        <Box sx={sx}>
           <LNGExportCard data={simulateData.lngExport} onSubmit={handleSubmitData} />
           <ResultBox entry={lngExportQueue[lngExportQueue.length - 1]} />
         </Box>
       </Box>
-
-      {submissions.length > 0 && (
-        <Drawer
-          anchor="bottom"
-          open={true}
-          variant="persistent"
-          sx={{
-            '& .MuiDrawer-paper': {
-              height: 'auto',
-              maxHeight: '30vh',
-              overflowY: 'auto',
-            },
-          }}
-        >
-          <Paper sx={{ p: 2, m: 1, maxHeight: '20vh', overflowY: 'auto' }}>
-            <Typography variant="h6">Submission Log</Typography>
-            {submissions.toSorted((a, b) => new Date(b.data.timestamp).getTime() - new Date(a.data.timestamp).getTime()).map((entry) => (
-              <Stack
-                sx={{ height: 40, borderBottom: '1px solid #ccc', p: 1 }}
-                direction="row"
-                key={entry.txid}
-                spacing={3}
-                justifyContent="space-between"
-                className='log-entry'
-              >
-                <Box sx={{ textAlign: 'left' }}>{entry.step}:</Box>
-                <Box sx={{ textAlign: 'right' }}>txid: {entry.txid}</Box>
-                <Box sx={{ textAlign: 'right' }}>{new Date(entry.data.timestamp).toLocaleString()}</Box>
-              </Stack>
-            ))}
-          </Paper>
-        </Drawer>
-      )}
+      <SubmissionsLog submissions={submissions} />
     </Container>
   );
 };
