@@ -1,6 +1,8 @@
+"use client"
 import React from 'react';
 import { Card, CardActionArea, CardContent, CardMedia, Typography } from '@mui/material';
 import { DataEntry } from '../../app/page';
+import { cardMediaSx, cardContainerSx, cardTitleSx, cardDescriptionSx } from '../styles/CardStyles';
 
 interface WellheadCardProps {
   data: DataEntry;
@@ -9,19 +11,19 @@ interface WellheadCardProps {
 
 const WellheadCard: React.FC<WellheadCardProps> = ({ data, onSubmit }) => {
   return (
-    <Card sx={{ width: '100%', height: 'auto', borderRadius: 4 }}>
+    <Card sx={cardContainerSx}>
       <CardActionArea onClick={() => onSubmit('Wellhead', data)}>
         <CardMedia
           component="img"
           image="/images/wellhead.png"
           alt="Wellhead"
-          sx={{ width: '100%', height: 'auto', aspectRatio: '1.67' }}
+          sx={cardMediaSx}
         />
         <CardContent>
-          <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: 18 }}>
+          <Typography gutterBottom variant="h5" component="div" sx={cardTitleSx}>
             Wellhead
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ fontSize: 14 }}>
+          <Typography variant="body1" color="text.secondary" sx={cardDescriptionSx}>
             Submit data from wellhead measurements including flow rate and composition
           </Typography>
         </CardContent>

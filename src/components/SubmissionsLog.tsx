@@ -1,3 +1,4 @@
+"use client"
 import { Drawer, Paper, Typography, Stack, Box } from '@mui/material';
 import { Submission } from '../app/page';
 

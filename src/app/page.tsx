@@ -299,15 +299,18 @@ const App: React.FC = () => {
     }
   };
 
-  const sx = {
+  const boxSx = {
     display: 'flex',
     gap: 2,
     alignItems: 'center',
-    xs: { flexDirection: 'column', width: '100%' },
-    sm: { flexDirection: 'column', width: '100%' },
-    md: { width: '60%' },
-    lg: { width: '40%' }
+    flexDirection: { xs: 'column', md: 'row' }
   };
+
+  const cardSx = {
+    width: { xs: '100%', sm: '100%', md: '50%', lg: '40%' },
+    minWidth: { md: '350px' },
+    flexShrink: 0
+  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column', pt: 10, pb: 40 }}>
@@ -315,20 +318,20 @@ const App: React.FC = () => {
         Natural Gas Blockchain Demo
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <Box sx={sx}>
-          <WellheadCard data={simulateData.wellhead} onSubmit={handleSubmitData} />
+        <Box sx={boxSx}>
+          <Box sx={cardSx}><WellheadCard data={simulateData.wellhead} onSubmit={handleSubmitData} /></Box>
           <ResultBox entry={wellheadQueue[wellheadQueue.length - 1]} />
         </Box>
-        <Box sx={sx}>
-          <GatheringCard data={simulateData.gathering} onSubmit={handleSubmitData} />
+        <Box sx={boxSx}>
+          <Box sx={cardSx}><GatheringCard data={simulateData.gathering} onSubmit={handleSubmitData} /></Box>
           <ResultBox entry={gatheringQueue[gatheringQueue.length - 1]} />
         </Box>
-        <Box sx={sx}>
-          <ProcessingCard data={simulateData.processing} onSubmit={handleSubmitData} />
+        <Box sx={boxSx}>
+          <Box sx={cardSx}><ProcessingCard data={simulateData.processing} onSubmit={handleSubmitData} /></Box>
           <ResultBox entry={processingQueue[processingQueue.length - 1]} />
         </Box>
-        <Box sx={sx}>
-          <TransmissionCard data={{
+        <Box sx={boxSx}>
+          <Box sx={cardSx}><TransmissionCard data={{
             ...simulateData.transmission,
             measurements: {
               ...simulateData.transmission.measurements,
@@ -340,15 +343,15 @@ const App: React.FC = () => {
                 nitrogenPct: 1
               }
             }
-          }} onSubmit={handleSubmitData} />
+          }} onSubmit={handleSubmitData} /></Box>
           <ResultBox entry={transmissionQueue[transmissionQueue.length - 1]} />
         </Box>
-        <Box sx={sx}>
-          <StorageCard data={simulateData.storage} onSubmit={handleSubmitData} />
+        <Box sx={boxSx}>
+          <Box sx={cardSx}><StorageCard data={simulateData.storage} onSubmit={handleSubmitData} /></Box>
           <ResultBox entry={storageQueue[storageQueue.length - 1]} />
         </Box>
-        <Box sx={sx}>
-          <LNGExportCard data={simulateData.lngExport} onSubmit={handleSubmitData} />
+        <Box sx={boxSx}>
+          <Box sx={cardSx}><LNGExportCard data={simulateData.lngExport} onSubmit={handleSubmitData} /></Box>
           <ResultBox entry={lngExportQueue[lngExportQueue.length - 1]} />
         </Box>
       </Box>
