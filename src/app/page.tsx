@@ -1,6 +1,6 @@
 "use client"
-import React, { useState } from 'react';
-import { Container, Typography, Box } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Container, Typography, Box, CircularProgress, Backdrop } from '@mui/material';
 import WellheadCard from '../components/stages/WellheadCard';
 import GatheringCard from '../components/stages/GatheringCard';
 import ProcessingCard from '../components/stages/ProcessingCard';
@@ -10,6 +10,7 @@ import LNGExportCard from '../components/stages/LNGExportCard';
 import ResultBox from '../components/ResultBox';
 import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, HTTPWalletJSON } from '@bsv/sdk'
 import SubmissionsLog from '@/components/SubmissionsLog';
+import { saveSubmission, getAllSubmissions } from '@/utils/db';
 
 export interface DataEntry {
   entryId: string;
@@ -59,9 +60,30 @@ const App: React.FC = () => {
   const [transmissionQueue, setTransmissionQueue] = useState<QueueEntry[]>([]);
   const [storageQueue, setStorageQueue] = useState<QueueEntry[]>([]);
   const [lngExportQueue, setLngExportQueue] = useState<QueueEntry[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittingStep, setSubmittingStep] = useState<string | null>(null);
 
-  async function handleSubmitData(step: string, data: DataEntry) {
+  useEffect(() => {
+    // Load submissions from IndexedDB
+    const loadSubmissions = async () => {
+      try {
+        const submissions = await getAllSubmissions();
+        if (submissions && submissions.length > 0) {
+          setSubmissions(submissions);          
+        }
+      } catch (error) {
+        console.error('Failed to load submissions from IndexedDB:', error);
+      }
+    };
+    
+    loadSubmissions();
+  }, []);
+
+  const handleSubmitData = async (step: string, data: DataEntry) => {
     try {
+      setIsSubmitting(true);
+      setSubmittingStep(step);
+      
       const entryId = Utils.toBase64(Random(8))
       data.entryId = entryId
       data.timestamp = new Date().toISOString()
@@ -69,7 +91,17 @@ const App: React.FC = () => {
 
       const { txid, arc } = await createTokenOnBSV(data, step)
 
-      setSubmissions((prev) => [...prev, { step, data, txid, arc }])
+      const newSubmission = { step, data, txid, arc };
+      
+      // Save to IndexedDB
+      try {
+        await saveSubmission(newSubmission);
+      } catch (error) {
+        console.error('Failed to save submission to IndexedDB:', error);
+      }
+      
+      setSubmissions(prev => [...prev, newSubmission]);
+
       switch (step) {
         case 'Wellhead':
           setWellheadQueue((prev) => [...prev, { data, txid, step }])
@@ -92,6 +124,9 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Error submitting data:', error);
+    } finally {
+      setIsSubmitting(false);
+      setSubmittingStep(null);
     }
   }
 
@@ -314,6 +349,24 @@ const App: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, minHeight: '100vh', display: 'flex', flexDirection: 'column', pt: 10, pb: 40 }}>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={isSubmitting}
+      >
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',
+          bgcolor: 'rgba(0,0,0,0.7)',
+          p: 3,
+          borderRadius: 2
+        }}>
+          <CircularProgress color="primary" />
+          <Typography variant="h6" sx={{ mt: 2, color: 'white' }}>
+            {submittingStep ? `Processing ${submittingStep} data...` : 'Processing...'}
+          </Typography>
+        </Box>
+      </Backdrop>
       <Typography variant="h4" align="center" color="white" gutterBottom sx={{ py: 5,fontWeight: 'bold', textShadow: '2px 1px 2px black' }}>
         Natural Gas Blockchain Demo
       </Typography>
@@ -332,17 +385,17 @@ const App: React.FC = () => {
         </Box>
         <Box sx={boxSx}>
           <Box sx={cardSx}><TransmissionCard data={{
-            ...simulateData.transmission,
-            measurements: {
-              ...simulateData.transmission.measurements,
-              composition: {
-                methanePct: 90,
-                ethanePct: 5,
-                propanePct: 3,
-                co2Pct: 1,
-                nitrogenPct: 1
-              }
-            }
+                ...simulateData.transmission,
+                measurements: {
+                  ...simulateData.transmission.measurements,
+                  composition: {
+                    methanePct: 90,
+                    ethanePct: 5,
+                    propanePct: 3,
+                    co2Pct: 1,
+                    nitrogenPct: 1
+                  }
+                }
           }} onSubmit={handleSubmitData} /></Box>
           <ResultBox entry={transmissionQueue[transmissionQueue.length - 1]} />
         </Box>
