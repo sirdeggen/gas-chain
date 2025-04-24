@@ -8,7 +8,7 @@ import TransmissionCard from '../components/stages/TransmissionCard';
 import StorageCard from '../components/stages/StorageCard';
 import LNGExportCard from '../components/stages/LNGExportCard';
 import ResultBox from '../components/ResultBox';
-import { Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, HTTPWalletJSON, ARC, LockingScript, CreateActionInput, fromUtxo, Beef, BEEF, WhatsOnChain } from '@bsv/sdk'
+import { Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, HTTPWalletJSON, ARC, CreateActionInput, Beef, BEEF, WhatsOnChain } from '@bsv/sdk'
 import SubmissionsLog from '@/components/SubmissionsLog';
 import { saveSubmission, getAllSubmissions } from '@/utils/db';
 
@@ -127,7 +127,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadSubmissions();
-  }, []);
+  });
 
   const grabTokenFromPreviousStep = async (step: string) => {
     switch (step) {
