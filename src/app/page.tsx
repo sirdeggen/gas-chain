@@ -8,7 +8,7 @@ import TransmissionCard from '../components/stages/TransmissionCard';
 import StorageCard from '../components/stages/StorageCard';
 import LNGExportCard from '../components/stages/LNGExportCard';
 import ResultBox from '../components/ResultBox';
-import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, HTTPWalletJSON } from '@bsv/sdk'
+import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, HTTPWalletJSON, Beef, WalletOutput, LockingScript, CreateActionInput, fromUtxo } from '@bsv/sdk'
 import SubmissionsLog from '@/components/SubmissionsLog';
 import { saveSubmission, getAllSubmissions } from '@/utils/db';
 
@@ -165,13 +165,10 @@ const App: React.FC = () => {
    * @param step The step of the process
    * @returns The transaction ID and broadcast response
    */
-  async function createTokenOnBSV(data: DataEntry, step: string): Promise<{ txid: string, arc: unknown }> {
+  async function createTokenOnBSV(data: DataEntry, step: string, spend?: QueueEntry | null): Promise<{ txid: string, arc: unknown }> {
     
     // Initialize the wallet client with the remote signer to emulate IoT Device signing off on its data.
-    const iotSigner = new HTTPWalletJSON('https://natural-chain.vercel.app', 'https://natural-chain.vercel.app/api')
-
-    // Initialize the wallet client with the remote signer
-    const wallet = new WalletClient(iotSigner)
+    const wallet = new HTTPWalletJSON('https://natural-chain.vercel.app', 'https://natural-chain.vercel.app/api')
 
     // Create a hash of the data
     const sha = Hash.sha256(JSON.stringify(data))
@@ -195,26 +192,64 @@ const App: React.FC = () => {
       'after'
     )
 
-    const tokens = await wallet.listOutputs({
-      basket: 'natural gas',
-      includeCustomInstructions: true,
-      include: 'entire transactions',
-      limit: 1000
-    })
-    
-    // Spend the current state of the token to create an immutable chain of custody
-    // const unlockingScript = pushdrop.redeem()
-    // const inputs: CreateActionInput[] = [{
-    //   unlockingScript: pushdrop.unlock(),
-    //   satoshis: 1,
-    //   outputDescription: 'natural gas supply chain token',
-    //   customInstructions: JSON.stringify(customInstructions),
-    //   basket: 'natural gas'
-    // }]
+    const inputs: CreateActionInput[] = []
+    if (spend) {
+      const sha = Hash.sha256(JSON.stringify(spend.data))
+      const customInstructions = {
+        protocolID: [0, 'natural gas data integrity'] as WalletProtocol,
+        keyID: Utils.toBase64(sha)
+      }
+      const tokens = await wallet.listOutputs({
+        basket: 'natural gas',
+        includeCustomInstructions: true,
+        include: 'entire transactions',
+        limit: 1000
+      })
+
+      if (tokens.totalOutputs > 0) {
+        const beef = Beef.fromBinary(tokens.BEEF as number[])
+        // pick an output to spend
+        const output = tokens.outputs.find(output => {
+          const c = JSON.parse(output.customInstructions as string)
+          return customInstructions.keyID === c.keyID
+        })
+        // Spend the current state of the token to create an immutable chain of custody
+        const unlockingScriptTemplate = await pushdrop.unlock(
+          customInstructions.protocolID,
+          customInstructions.keyID,
+          'self',
+          'single',
+          true,
+          1,
+          LockingScript.fromHex(output!.lockingScript as string)
+        )
+        const [txid, vout] = output!.outpoint.split('.')
+        const txDummy = new Transaction()
+
+        txDummy.addInput(fromUtxo({ 
+          txid, 
+          vout: parseInt(vout), 
+          script: output!.lockingScript as string, 
+          satoshis: 1 
+        }, unlockingScriptTemplate))
+
+        txDummy.addOutput({
+          lockingScript,
+          satoshis: 1,
+        })
+        await txDummy.sign()
+        if (output) inputs.push({
+          unlockingScript: txDummy.inputs[0].unlockingScript?.toHex() as string,
+          outpoint: output.outpoint,
+          inputDescription: 'natural gas supply chain token'
+        })
+      }
+    }
+
 
     const res = await wallet.createAction({
       description: 'record data within an NFT for natural gas supply chain tracking',
-      // inputs,
+      inputs,
       outputs: [{
         lockingScript: lockingScript.toHex(),
         satoshis: 1,
