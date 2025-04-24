@@ -8,7 +8,7 @@ import TransmissionCard from '../components/stages/TransmissionCard';
 import StorageCard from '../components/stages/StorageCard';
 import LNGExportCard from '../components/stages/LNGExportCard';
 import ResultBox from '../components/ResultBox';
-import { Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, HTTPWalletJSON, ARC, LockingScript, CreateActionInput, fromUtxo, Beef, BEEF } from '@bsv/sdk'
+import { Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, HTTPWalletJSON, ARC, LockingScript, CreateActionInput, fromUtxo, Beef, BEEF, WhatsOnChain } from '@bsv/sdk'
 import SubmissionsLog from '@/components/SubmissionsLog';
 import { saveSubmission, getAllSubmissions } from '@/utils/db';
 
@@ -51,6 +51,14 @@ export interface Submission {
   arc: unknown;
 }
 
+type BitailsResponse = {
+  txid: string;
+  outputs: Array<{
+    index: number;
+    spent: string;
+  }>;
+}
+
 const App: React.FC = () => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [wellheadQueue, setWellheadQueue] = useState<QueueEntry[]>([]);
@@ -62,19 +70,62 @@ const App: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittingStep, setSubmittingStep] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Load submissions from IndexedDB
-    const loadSubmissions = async () => {
-      try {
-        const submissions = await getAllSubmissions();
-        if (submissions && submissions.length > 0) {
-          setSubmissions(submissions);          
+  const checkUnspentSetQueues = async (submissions: Submission[]) => {
+    const txsIds = submissions.map(s => s.txid)
+    const bitails: BitailsResponse[] = await (await fetch('https://api.bitails.io/tx/multi', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ txsIds })
+    })).json()
+    const unspentSubmissions = submissions.filter(s => {
+      const tx = bitails.find(b => b.txid === s.txid)
+      return tx?.outputs[0].spent === ''
+    })
+    if (unspentSubmissions.length > 0) {
+      // add unspent tokens to the appropriate queue
+      unspentSubmissions.forEach(token => {
+        switch (token.step) {
+          case 'Wellhead':
+            setWellheadQueue((prev) => [...prev, token])
+            break
+          case 'Gathering':
+            setGatheringQueue((prev) => [...prev, token])
+            break
+          case 'Processing':
+            setProcessingQueue((prev) => [...prev, token])
+            break
+          case 'Transmission':
+            setTransmissionQueue((prev) => [...prev, token])
+            break
+          case 'Storage':
+            setStorageQueue((prev) => [...prev, token])
+            break
+          case 'LNG Export':
+            setLngExportQueue((prev) => [...prev, token])
+            break
         }
-      } catch (error) {
-        console.error('Failed to load submissions from IndexedDB:', error);
+      })
+    }
+  }
+
+  // Load submissions from IndexedDB
+  const loadSubmissions = async () => {
+    try {
+      const submissions = await getAllSubmissions();
+      if (submissions && submissions.length > 0) {
+        // check for unspent tokens:
+        setSubmissions(submissions);          
+        await checkUnspentSetQueues(submissions)
       }
-    };
-    
+    } catch (error) {
+      console.error('Failed to load submissions from IndexedDB:', error);
+    }
+  };
+
+
+  useEffect(() => {
     loadSubmissions();
   }, []);
 
@@ -231,6 +282,8 @@ const App: React.FC = () => {
         limit: 1000
       })
 
+      console.log({ outputs: tokens.outputs })
+
       const beef = Beef.fromBinary(tokens.BEEF as number[])
 
       if (tokens.totalOutputs > 0) {
@@ -242,9 +295,9 @@ const App: React.FC = () => {
         if (output) {
           const [txid, voutStr] = output.outpoint.split('.')
           const vout = parseInt(voutStr)
-          const sourceTransaction = beef.findTransactionForSigning(txid) as Transaction
+          const sourceTransaction = beef.findAtomicTransaction(txid) as Transaction
           // Spend the current state of the token to create an immutable chain of custody
-          const unlockingScriptTemplate = await pushdrop.unlock(
+          const unlockingScriptTemplate = pushdrop.unlock(
             customInstructions.protocolID,
             customInstructions.keyID,
             'self',
@@ -275,6 +328,8 @@ const App: React.FC = () => {
           }
           const nb = new Beef()
           nb.mergeTransaction(sourceTransaction)
+          console.log(nb.toLogString())
+          console.log(await nb.verify(new WhatsOnChain()))
           inputBEEF = nb.toBinary()
           inputs.push({
             unlockingScript: txDummy.inputs[0].unlockingScript?.toHex() as string,
@@ -300,7 +355,9 @@ const App: React.FC = () => {
       inputs,
       outputs,
       options: {
-        knownTxids
+        trustSelf: 'known',
+        knownTxids,
+        randomizeOutputs: false
       }
     })
     const tx = Transaction.fromAtomicBEEF(res.tx as number[])
