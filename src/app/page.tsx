@@ -8,7 +8,7 @@ import TransmissionCard from '../components/stages/TransmissionCard';
 import StorageCard from '../components/stages/StorageCard';
 import LNGExportCard from '../components/stages/LNGExportCard';
 import ResultBox from '../components/ResultBox';
-import { WalletClient, Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, ARC, HTTPWalletJSON, Beef, WalletOutput, LockingScript, CreateActionInput, fromUtxo } from '@bsv/sdk'
+import { Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, HTTPWalletJSON, ARC, LockingScript, CreateActionInput, fromUtxo } from '@bsv/sdk'
 import SubmissionsLog from '@/components/SubmissionsLog';
 import { saveSubmission, getAllSubmissions } from '@/utils/db';
 
@@ -193,6 +193,7 @@ const App: React.FC = () => {
     )
 
     const inputs: CreateActionInput[] = []
+    const knownTxids: string[] = []
     if (spend) {
       const sha = Hash.sha256(JSON.stringify(spend.data))
       const customInstructions = {
@@ -207,7 +208,6 @@ const App: React.FC = () => {
       })
 
       if (tokens.totalOutputs > 0) {
-        const beef = Beef.fromBinary(tokens.BEEF as number[])
         // pick an output to spend
         const output = tokens.outputs.find(output => {
           const c = JSON.parse(output.customInstructions as string)
@@ -225,6 +225,7 @@ const App: React.FC = () => {
         )
         const [txid, vout] = output!.outpoint.split('.')
         const txDummy = new Transaction()
+        knownTxids.push(txid)
 
         txDummy.addInput(fromUtxo({ 
           txid, 
@@ -256,7 +257,10 @@ const App: React.FC = () => {
         outputDescription: 'natural gas supply chain token',
         customInstructions: JSON.stringify(customInstructions),
         basket: 'natural gas'
-      }]
+      }],
+      options: {
+        knownTxids
+      }
     })
     const tx = Transaction.fromAtomicBEEF(res.tx as number[])
     const arc = await tx.broadcast(new ARC('https://arc.taal.com', {

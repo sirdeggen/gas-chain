@@ -21,6 +21,7 @@ const ResultBox: React.FC<ResultBoxProps> = ({ entry: startingData }) => {
     setArcData(res)
   }
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const flatJSON = (obj: any, parentKey = '') => {
     const result: any = {}
     for (const key in obj) {

@@ -1,5 +1,7 @@
 "use client"
 
+import { Submission } from "@/app/page";
+
 // IndexedDB utility for the Gas Chain application
 // Handles storage of submissions in a client-side database
 
@@ -40,7 +42,7 @@ export const openDatabase = (): Promise<IDBDatabase> => {
 };
 
 // Save a submission to the database
-export const saveSubmission = async (submission: any): Promise<void> => {
+export const saveSubmission = async (submission: Submission): Promise<void> => {
   try {
     const db = await openDatabase();
     const transaction = db.transaction([SUBMISSIONS_STORE], 'readwrite');
@@ -69,7 +71,7 @@ export const saveSubmission = async (submission: any): Promise<void> => {
 };
 
 // Get all submissions from the database
-export const getAllSubmissions = async (): Promise<any[]> => {
+export const getAllSubmissions = async (): Promise<Submission[]> => {
   try {
     const db = await openDatabase();
     const transaction = db.transaction([SUBMISSIONS_STORE], 'readonly');
@@ -98,7 +100,7 @@ export const getAllSubmissions = async (): Promise<any[]> => {
 };
 
 // Get submissions by step
-export const getSubmissionsByStep = async (step: string): Promise<any[]> => {
+export const getSubmissionsByStep = async (step: string): Promise<Submission[]> => {
   try {
     const db = await openDatabase();
     const transaction = db.transaction([SUBMISSIONS_STORE], 'readonly');
