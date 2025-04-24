@@ -8,7 +8,7 @@ import TransmissionCard from '../components/stages/TransmissionCard';
 import StorageCard from '../components/stages/StorageCard';
 import LNGExportCard from '../components/stages/LNGExportCard';
 import ResultBox from '../components/ResultBox';
-import { Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, HTTPWalletJSON, ARC, LockingScript, CreateActionInput, fromUtxo } from '@bsv/sdk'
+import { Utils, Hash, PushDrop, WalletProtocol, Random, Transaction, HTTPWalletJSON, ARC, LockingScript, CreateActionInput, fromUtxo, Beef, BEEF } from '@bsv/sdk'
 import SubmissionsLog from '@/components/SubmissionsLog';
 import { saveSubmission, getAllSubmissions } from '@/utils/db';
 
@@ -215,8 +215,9 @@ const App: React.FC = () => {
       'after'
     )
 
-    const inputs: CreateActionInput[] = []
-    const knownTxids: string[] = []
+    let inputs: CreateActionInput[] | undefined = undefined
+    let knownTxids: string[] | undefined = undefined
+    let inputBEEF: BEEF | undefined = undefined
     if (spend) {
       const sha = Hash.sha256(JSON.stringify(spend.data))
       const customInstructions = {
@@ -230,6 +231,8 @@ const App: React.FC = () => {
         limit: 1000
       })
 
+      const beef = Beef.fromBinary(tokens.BEEF as number[])
+
       if (tokens.totalOutputs > 0) {
         // pick the output to spend based on available tokens matching this keyID
         const output = tokens.outputs.find(output => {
@@ -237,6 +240,9 @@ const App: React.FC = () => {
           return customInstructions.keyID === c.keyID
         })
         if (output) {
+          const [txid, voutStr] = output.outpoint.split('.')
+          const vout = parseInt(voutStr)
+          const sourceTransaction = beef.findTransactionForSigning(txid) as Transaction
           // Spend the current state of the token to create an immutable chain of custody
           const unlockingScriptTemplate = await pushdrop.unlock(
             customInstructions.protocolID,
@@ -245,24 +251,31 @@ const App: React.FC = () => {
             'single',
             true,
             1,
-            LockingScript.fromHex(output!.lockingScript as string)
+            sourceTransaction.outputs[vout].lockingScript
           )
-          const [txid, vout] = output!.outpoint.split('.')
           const txDummy = new Transaction()
+          if (!knownTxids) {
+            knownTxids = []
+          }
           knownTxids.push(txid)
 
-          txDummy.addInput(fromUtxo({ 
-            txid, 
-            vout: parseInt(vout), 
-            script: output!.lockingScript as string, 
-            satoshis: 1 
-          }, unlockingScriptTemplate))
+          txDummy.addInput({
+            sourceTransaction,
+            sourceOutputIndex: vout,
+            unlockingScriptTemplate
+          })
 
           txDummy.addOutput({
             lockingScript,
             satoshis: 1,
           })
           await txDummy.sign()
+          if (!inputs) {
+            inputs = []
+          }
+          const nb = new Beef()
+          nb.mergeTransaction(sourceTransaction)
+          inputBEEF = nb.toBinary()
           inputs.push({
             unlockingScript: txDummy.inputs[0].unlockingScript?.toHex() as string,
             outpoint: output.outpoint,
@@ -282,6 +295,7 @@ const App: React.FC = () => {
 
 
     const res = await wallet.createAction({
+      inputBEEF,
       description: 'record data within an NFT for natural gas supply chain tracking',
       inputs,
       outputs,
