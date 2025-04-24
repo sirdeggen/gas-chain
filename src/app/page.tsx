@@ -78,6 +78,23 @@ const App: React.FC = () => {
     loadSubmissions();
   }, []);
 
+  const grabTokenFromPreviousStep = async (step: string) => {
+    switch (step) {
+        case 'Wellhead':
+          return undefined
+        case 'Gathering':
+          return wellheadQueue[0]
+        case 'Processing':
+          return gatheringQueue[0]
+        case 'Transmission':
+          return processingQueue[0]
+        case 'Storage':
+          return transmissionQueue[0]
+        case 'LNG Export':
+          return storageQueue[0]
+      }
+  }
+
   const handleSubmitData = async (step: string, data: DataEntry) => {
     try {
       setIsSubmitting(true);
@@ -88,7 +105,9 @@ const App: React.FC = () => {
       data.timestamp = new Date().toISOString()
       data = simulatedData(data)
 
-      const { txid, arc } = await createTokenOnBSV(data, step)
+      const spend = await grabTokenFromPreviousStep(step)
+
+      const { txid, arc } = await createTokenOnBSV(data, step, spend)
 
       const newSubmission = { step, data, txid, arc };
       
@@ -107,18 +126,23 @@ const App: React.FC = () => {
           break
         case 'Gathering':
           setGatheringQueue((prev) => [...prev, { data, txid, step }])
+          setWellheadQueue((prev) => prev.slice(1))
           break
         case 'Processing':
           setProcessingQueue((prev) => [...prev, { data, txid, step }])
+          setGatheringQueue((prev) => prev.slice(1))
           break
         case 'Transmission':
           setTransmissionQueue((prev) => [...prev, { data, txid, step }])
+          setProcessingQueue((prev) => prev.slice(1))
           break
         case 'Storage':
           setStorageQueue((prev) => [...prev, { data, txid, step }])
+          setTransmissionQueue((prev) => prev.slice(1))
           break
         case 'LNG Export':
           setLngExportQueue((prev) => [...prev, { data, txid, step }])
+          setStorageQueue((prev) => prev.slice(1))
           break
       }
     } catch (error) {
@@ -207,56 +231,60 @@ const App: React.FC = () => {
       })
 
       if (tokens.totalOutputs > 0) {
-        // pick an output to spend
+        // pick the output to spend based on available tokens matching this keyID
         const output = tokens.outputs.find(output => {
           const c = JSON.parse(output.customInstructions as string)
           return customInstructions.keyID === c.keyID
         })
-        // Spend the current state of the token to create an immutable chain of custody
-        const unlockingScriptTemplate = await pushdrop.unlock(
-          customInstructions.protocolID,
-          customInstructions.keyID,
-          'self',
-          'single',
-          true,
-          1,
-          LockingScript.fromHex(output!.lockingScript as string)
-        )
-        const [txid, vout] = output!.outpoint.split('.')
-        const txDummy = new Transaction()
-        knownTxids.push(txid)
+        if (output) {
+          // Spend the current state of the token to create an immutable chain of custody
+          const unlockingScriptTemplate = await pushdrop.unlock(
+            customInstructions.protocolID,
+            customInstructions.keyID,
+            'self',
+            'single',
+            true,
+            1,
+            LockingScript.fromHex(output!.lockingScript as string)
+          )
+          const [txid, vout] = output!.outpoint.split('.')
+          const txDummy = new Transaction()
+          knownTxids.push(txid)
 
-        txDummy.addInput(fromUtxo({ 
-          txid, 
-          vout: parseInt(vout), 
-          script: output!.lockingScript as string, 
-          satoshis: 1 
-        }, unlockingScriptTemplate))
+          txDummy.addInput(fromUtxo({ 
+            txid, 
+            vout: parseInt(vout), 
+            script: output!.lockingScript as string, 
+            satoshis: 1 
+          }, unlockingScriptTemplate))
 
-        txDummy.addOutput({
-          lockingScript,
-          satoshis: 1,
-        })
-        await txDummy.sign()
-        if (output) inputs.push({
-          unlockingScript: txDummy.inputs[0].unlockingScript?.toHex() as string,
-          outpoint: output.outpoint,
-          inputDescription: 'natural gas supply chain token'
-        })
+          txDummy.addOutput({
+            lockingScript,
+            satoshis: 1,
+          })
+          await txDummy.sign()
+          inputs.push({
+            unlockingScript: txDummy.inputs[0].unlockingScript?.toHex() as string,
+            outpoint: output.outpoint,
+            inputDescription: 'natural gas supply chain token'
+          })
+        }
       }
     }
+
+    const outputs = [{
+      lockingScript: lockingScript.toHex(),
+      satoshis: 1,
+      outputDescription: 'natural gas supply chain token',
+      customInstructions: JSON.stringify(customInstructions),
+      basket: 'natural gas'
+    }]
 
 
     const res = await wallet.createAction({
       description: 'record data within an NFT for natural gas supply chain tracking',
       inputs,
-      outputs: [{
-        lockingScript: lockingScript.toHex(),
-        satoshis: 1,
-        outputDescription: 'natural gas supply chain token',
-        customInstructions: JSON.stringify(customInstructions),
-        basket: 'natural gas'
-      }],
+      outputs,
       options: {
         knownTxids
       }
