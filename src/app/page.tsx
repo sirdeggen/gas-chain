@@ -35,7 +35,6 @@ export interface DataEntry {
       nitrogenPct: number;
     };
   };
-  signature: string;
   [key: string]: unknown;
 }
 
@@ -290,7 +289,6 @@ const App: React.FC = () => {
           nitrogenPct: 4.0
         },
       },
-      signature: 'f4a9b5e1cd7...digitalSignature'
     },
     gathering: {
       entryId: 'ctp-987654321',
@@ -308,7 +306,6 @@ const App: React.FC = () => {
         co2Pct: 0.5,
         nitrogenPct: 3.7
       },
-      signature: '8c7e2fd31ab...digitalSignature'
     },
     processing: {
       entryId: 'ppd-112233445',
@@ -325,7 +322,6 @@ const App: React.FC = () => {
         co2Pct: 0.4,
         nitrogenPct: 1.8
       },
-      signature: 'bc5dfaa4c32...digitalSignature'
     },
     transmission: {
       entryId: 'tpd-556677889',
@@ -343,7 +339,6 @@ const App: React.FC = () => {
         co2Pct: 0.3,
         nitrogenPct: 2.0
       },
-      signature: 'd9eaf1cc3ef...digitalSignature'
     },
     storage: {
       entryId: 'sfd-998877665',
@@ -360,7 +355,6 @@ const App: React.FC = () => {
         co2Pct: 0.3,
         nitrogenPct: 2.1
       },
-      signature: 'e7bc55de123...digitalSignature'
     },
     lngExport: {
       entryId: 'lng-443322110',
@@ -376,7 +370,6 @@ const App: React.FC = () => {
         co2Pct: 0.2,
         nitrogenPct: 2.0
       },
-      signature: 'a3ef77bda44...digitalSignature'
     }
   };
 
