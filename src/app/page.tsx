@@ -79,35 +79,45 @@ const App: React.FC = () => {
       },
       body: JSON.stringify({ txsIds })
     })).json()
+    console.log({bitails})
     const unspentSubmissions = submissions.filter(s => {
-      const tx = bitails.find(b => b.txid === s.txid)
-      return tx?.outputs[0].spent === ''
+      const tx = bitails.find(b => b?.txid === s.txid)
+      console.log({ s: s.txid, spent: !!tx?.outputs[0].spent })
+      return !tx?.outputs[0].spent
     })
     if (unspentSubmissions.length > 0) {
       // add unspent tokens to the appropriate queue
+      const newWellHead: QueueEntry[] = []
+      const newGathering: QueueEntry[] = []
+      const newProcessing: QueueEntry[] = []
+      const newTransmission: QueueEntry[] = []
+      const newStorage: QueueEntry[] = []
+      const newLngExport: QueueEntry[] = []
       unspentSubmissions.forEach(token => {
         switch (token.step) {
           case 'Wellhead':
-            setWellheadQueue((prev) => [...prev, token])
+            newWellHead.push(token)
             break
           case 'Gathering':
-            setGatheringQueue((prev) => [...prev, token])
+            newGathering.push(token)
             break
           case 'Processing':
-            setProcessingQueue((prev) => [...prev, token])
+            newProcessing.push(token)
             break
           case 'Transmission':
-            setTransmissionQueue((prev) => [...prev, token])
+            newTransmission.push(token)
             break
           case 'Storage':
-            setStorageQueue((prev) => [...prev, token])
+            newStorage.push(token)
             break
           case 'LNG Export':
-            setLngExportQueue((prev) => [...prev, token])
+            newLngExport.push(token)
             break
         }
       })
+      return { newWellHead, newGathering, newProcessing, newTransmission, newStorage, newLngExport }
     }
+    return { newWellHead: [], newGathering: [], newProcessing: [], newTransmission: [], newStorage: [], newLngExport: [] }
   }
 
   // Load submissions from IndexedDB
@@ -116,8 +126,15 @@ const App: React.FC = () => {
       const submissions = await getAllSubmissions();
       if (submissions && submissions.length > 0) {
         // check for unspent tokens:
-        setSubmissions(submissions);          
-        await checkUnspentSetQueues(submissions)
+        const { newWellHead, newGathering, newProcessing, newTransmission, newStorage, newLngExport } = await checkUnspentSetQueues(submissions)
+        console.log({ newWellHead, newGathering, newProcessing, newTransmission, newStorage, newLngExport })
+        setSubmissions(submissions)
+        setWellheadQueue(newWellHead)
+        setGatheringQueue(newGathering)
+        setProcessingQueue(newProcessing)
+        setTransmissionQueue(newTransmission)
+        setStorageQueue(newStorage)
+        setLngExportQueue(newLngExport)
       }
     } catch (error) {
       console.error('Failed to load submissions from IndexedDB:', error);
@@ -126,8 +143,8 @@ const App: React.FC = () => {
 
 
   useEffect(() => {
-    loadSubmissions();
-  });
+    loadSubmissions()
+  }, []);
 
   const grabTokenFromPreviousStep = async (step: string) => {
     switch (step) {
