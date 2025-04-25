@@ -361,11 +361,7 @@ const App: React.FC = () => {
       }
     })
     const tx = Transaction.fromAtomicBEEF(res.tx as number[])
-    const arc = await tx.broadcast(new ARC('https://arc.taal.com', {
-      headers: {
-        'X-WaitFor': 'SEEN_ON_NETWORK'
-      }
-    }))
+    const arc = await tx.broadcast(new ARC('https://arc.taal.com'))
     console.log({ arc })
     return { txid: res.txid as string, arc }
   }
